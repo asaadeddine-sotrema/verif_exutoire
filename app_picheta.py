@@ -11,7 +11,7 @@ import datetime
 warnings.filterwarnings('ignore')
 
 # --- CONFIGURATION ---
-FICHIER_SORTIE = r"\\app\Commun\aminesaadeddine\verif_tonnage_valene\test.csv"
+FICHIER_SORTIE = r"test.csv"
 DOSSIER_OUTPUT = "output"
 
 # =============================================================================

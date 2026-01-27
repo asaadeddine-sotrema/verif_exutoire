@@ -25,8 +25,8 @@ En tant qu'ingénieur Data, j'ai l'habitude de voir le monde à travers des fich
 C'est ici que mes "étonnements" rejoignent ma mission actuelle :
 
 - **Le décalage "Terrain / Bureau" :** Il y a un contraste saisissant entre la réalité physique (camions, pesées, mouvements) et la gestion administrative (fichiers Excel, ressaisie manuelle). J'ai été surpris de voir à quel point des processus vitaux reposent encore sur de la saisie manuelle et de la vérification visuelle, avec le risque d'erreur que cela comporte.
-- **La richesse de la donnée non exploitée :** En discutant avec les chauffeurs et contrôleurs, j'ai réalisé qu'ils détiennent une énorme quantité d'informations (anomalies récurrentes, clients difficiles, problèmes de pesée) qui ne remontent pas toujours jusqu'à l'outil de décision.
-- **L'impact de mon projet :** Avant l'immersion, je voyais mon projet comme une "automatisation de calculs". Aujourd'hui, je comprends que mon outil va servir à valider le travail difficile effectué dehors. Si la pesée est fausse ou le ticket perdu, c'est toute la chaîne de valeur (du ripeur à la facturation) qui est impactée.
+- **La richesse de la donnée non exploitée :** En discutant avec les chauffeurs et contrôleurs, j'ai réalisé qu'ils détiennent une énorme quantité d'informations (anomalies récurrentes, problèmes de pesée) qui ne remontent pas toujours correctement jusqu'à l'outil de décision.
+- **L'impact de mon projet :** Avant l'immersion, je voyais mon projet comme une "automatisation de calculs". Aujourd'hui, je comprends que mon outil va servir à valider le travail difficile. Si la pesée est fausse ou le ticket perdu, c'est toute la chaîne de valeur qui est impactée.
 
 ## 4. CONCLUSION
 

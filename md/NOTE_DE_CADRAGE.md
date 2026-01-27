@@ -1,5 +1,8 @@
 # Note de Cadrage : Automatisation de la Vérification des Tonnages
 
+## 0. Résumé Opérationnel
+Ce projet automatise le contrôle de facturation des déchets. Il réduit le temps de traitement de plusieurs heures à quelques secondes, sécurise le chiffre d'affaires en détectant 100% des écarts, et garantit la conformité des données (RGPD/Sécurité).
+
 ## 1. Contexte et Problématique
 La vérification mensuelle des tonnages est une tâche critique pour le suivi de la facturation et de l'exploitation. Actuellement, ce processus est réalisé manuellement en croisant plusieurs sources de données (fichiers "Terrain" internes type ECOREC vs fichiers "Exutoire" externes).
 
@@ -13,17 +16,18 @@ L'objectif principal est de développer une suite d'outils pour :
 1.  **Automatiser le rapprochement** des tickets de pesée entre les données internes et externes.
 2.  **Sécuriser le chiffre d'affaires** et les coûts en identifiant systématiquement les écarts de tonnage et les tickets manquants.
 3.  **Gagner du temps** opérationnel en réduisant la tâche de plusieurs heures à quelques secondes.
-4.  **Centraliser le reporting** via une sortie standardisée exploitable par Power BI.
+4.  **Centraliser le reporting** via une sortie standardisée exploitable par une application Web.
 
 ## 3. Périmètre
-Le projet se décline en plusieurs modules spécifiques propres à chaque exutoire (VALENE, DUPILLE, PICHETA).
+Le projet se décline en plusieurs modules spécifiques propres à chaque exutoire (VALENE, DUPILLE, PICHETA et SUEZ).
 
 ## 4. Architecture Technique
 *   **Langage :** Python 3
-*   **Interface Utilisateur (GUI) :** Tkinter (pour une utilisation simple par les opérateurs sans connaissances en code).
+*   **Interface Utilisateur (GUI) :** Streamlit (pour une utilisation simple par les opérateurs sans connaissances en code).
 *   **Traitement de données :** Pandas, Numpy (pour la performance sur les volumes de données).
 *   **Stockage/Sortie :** Base de données centralisée afin de coupler robustesse et fiabilité.
-*   **Infrastructure :** Exécutables autonomes (.exe) ou scripts Python, fonctionnant en local sur Windows.
+*   **Infrastructure :** Serveur Ubuntu.
+*   **Sécurité :** Authentification chiffrée (SHA-256/Bcrypt) et conformité RGPD (traçabilité des actions).
 
 ## 5. Fonctionnalités Clés
 ### 5.1 Importation et Nettoyage
@@ -45,19 +49,21 @@ Le système génère 4 statuts de contrôle pour chaque ligne :
 4.  **Verif_Client :** "OK" si le client correspond (avec gestion de règles spécifiques type GPSO/CCPIF).
 
 ## 6. Livrables
-1.  **Trois Applications Python** (`app_picheta.py`, `app_valene.py`, `app_dupille.py`) avec interface graphique.
-2.  **Base de Données CSV** consolidée, mise à jour incrémentalement par chaque outil.
-3.  **Rapport PowerBI** (`Outil_Exutoire.pbix`) connecté à la base de données consolidée pour la visualisation des KPI (Ecarts totaux, Top erreurs, etc.).
-4.  **Documentation** (ce document + README).
+1.  **Application Web Centralisée** : Tableau de Bord consolidé avec ingestion des fichiers Excel et visualisation des données.
+2.  **Base de Données PostGreSQL** consolidée, mise à jour incrémentalement par l'outil web.
+3.  **Documentation** (ce document + documentation utilisateur).
 
 ## 7. Planning et Statut
 *   **Développement :** En cours.
-*   **Phase actuelle :** Développement d'un algorithme permettant de faire correspondre chaque ligne sans numéro de ticket.
+*   **Phase actuelle :** Développement d'un algorithme permettant de faire correspondre chaque ligne sans numéro de ticket pour SUEZ
 *   **Actions en cours :**
-    *   Amélioration de la robustesse face aux fichiers CSV mal encodés.
+    *   **Ajout de l'exutoire SUEZ :** En cours de finalisation.
+    *   Amélioration de la robustesse face aux fichiers Excel mal encodés.
     *   Affinement des règles de détection des clients (Code Adresse vs Nom Client).
+*   **Réalisé récemment :**
+    *   **Sécurisation de l'application :** Mise en place d'une authentification forte.
     
 *   **Prochaines étapes :**
-    *   Intégration des nouvelles fonctionnalités dans les applications (supprimer les lignes vérifiées (clés : 'Num Ticket', 'Num Bon'))
+    *   Intégration des nouvelles fonctionnalités dans l'outil web.
     *   Tests approfondis et validation des résultats.
     *   Documentation et formation des utilisateurs.

@@ -20,11 +20,10 @@ L'objectif de cette solution est de fiabiliser le contrôle de gestion sur les f
 
 ### 2. ARCHITECTURE DE LA SOLUTION
 
-La solution se présente comme une suite logicielle composée de 3 briques interconnectées :
+La solution se présente comme une suite logicielle composée de 2 briques interconnectées :
 
-1.  **Les Modules Connecteurs :** Applications autonomes qui lisent, nettoient et croisent les fichiers Excel bruts.
-2.  **La Base de Données Centrale :** Un stockage unique et sécurisé qui consolide l'historique.
-3.  **Le Tableau de Bord de Pilotage (Power BI) :** L'interface visuelle pour la validation et la prise de décision.
+1.  **Le Tableau de Bord de Pilotage (Streamlit) :** L'interface visuelle pour la validation et la prise de décision.
+2.  **La Base de Données Centrale (PostgreSQL) :** Un stockage unique et sécurisé qui consolide l'historique.
 
 ---
 
