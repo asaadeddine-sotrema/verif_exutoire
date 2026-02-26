@@ -667,3 +667,4 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-02-26 10:55:25 - INFO - [admin] - Charge Suez CTC: 29 lignes
 2026-02-26 10:55:25 - INFO - [admin] - Charge Suez DECH: 186 lignes
 2026-02-26 11:12:52 - INFO - [System] - Connexion réussie: admin
+2026-02-26 11:19:59 - root - INFO - Logging initialisé. Fichier: logs/app.log
