@@ -19,7 +19,7 @@ L'objectif principal est de développer une suite d'outils pour :
 4.  **Centraliser le reporting** via une sortie standardisée exploitable par une application Web.
 
 ## 3. Périmètre
-Le projet se décline en plusieurs modules spécifiques propres à chaque exutoire (VALENE, DUPILLE, PICHETA et SUEZ).
+Le projet se décline en plusieurs modules spécifiques propres à chaque exutoire (VALENE, DUPILLE, PICHETA GPSEO et SUEZ).
 
 ## 4. Architecture Technique
 *   **Langage :** Python 3

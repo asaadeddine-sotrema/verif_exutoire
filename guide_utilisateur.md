@@ -1,7 +1,7 @@
 # Manuel Utilisateur - Outil de Vérification Exutoire
 
 ## 🎯 Objectif de l'outil
-Cet outil permet de **rapprocher et contrôler** automatiquement les pesées "Terrain" (vos bons de pesée) avec les factures des exutoires (SUEZ, PICHETA, DUPILLE, VALENE).
+Cet outil permet de **rapprocher et contrôler** automatiquement les pesées "Terrain" (vos bons de pesée) avec les factures des exutoires (SUEZ, PICHETA GPSEO, DUPILLE, VALENE).
 L'objectif est d'identifier rapidement :
 *   Les écarts de poids (> 20kg ou 0.02t).
 *   Les erreurs de facturation (tickets facturés mais inconnus au terrain).
@@ -25,7 +25,7 @@ Allez dans le menu **📥 Imports & Vérifications**.
 ### Etape 1 : Choisir l'Exutoire
 Sélectionnez l'onglet correspondant à l'exutoire que vous voulez traiter :
 *   **SUEZ**
-*   **PICHTA**
+*   **PICHETA GPSEO**
 *   **DUPILLE**
 *   **VALENE**
 

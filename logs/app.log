@@ -1,0 +1,669 @@
+2026-02-12 11:06:12 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-12 11:06:12 - ERROR - [System] - Erreur charger_dupille: 'str' object has no attribute 'seek'
+2026-02-12 11:07:06 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-12 11:07:06 - INFO - [System] - DUPILLE LB Date Repair with Jour applied.
+2026-02-12 11:08:06 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-12 11:08:07 - INFO - [System] - DUPILLE LB Date Repair with Jour applied.
+2026-02-12 11:10:06 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-12 11:10:07 - INFO - [System] - DUPILLE LB Date Repair with Jour applied.
+2026-02-16 11:03:36 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-16 11:03:46 - INFO - [System] - Connexion réussie: admin
+2026-02-16 11:04:04 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:04:04 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:04:04 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:11:52 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:11:52 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:11:52 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:11:55 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:11:55 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:11:55 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:14:38 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:14:38 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:14:38 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:14:39 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:14:39 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:14:39 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:14:40 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:14:40 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:14:40 - INFO - [System] - Charge Suez DECH: 69 lignes
+2026-02-16 11:14:40 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:14:40 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:14:40 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:15:27 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:15:27 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:15:27 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:15:28 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:15:28 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:15:28 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:15:28 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:15:28 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:15:28 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:20:37 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:20:37 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:20:37 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:20:38 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:20:38 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:20:38 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:20:38 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:20:38 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:20:38 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:20:39 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:20:39 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:20:39 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:25:09 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:25:09 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:25:09 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:25:44 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:25:44 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:25:44 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:25:45 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:25:45 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:25:45 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:25:46 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:25:46 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:25:46 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:28:14 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:28:14 - INFO - [admin] - [SUEZ CTC] SWAP BRUT APPLIQUÉ (Inversion Jour/Mois détectée)
+2026-02-16 11:28:14 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:28:14 - INFO - [admin] - [SUEZ DECH] SWAP BRUT APPLIQUÉ (Inversion Jour/Mois détectée)
+2026-02-16 11:28:14 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:28:14 - INFO - [admin] - [SUEZ FACTURE] SWAP BRUT APPLIQUÉ (Inversion Jour/Mois détectée)
+2026-02-16 11:30:05 - INFO - [admin] - Début traitement SUEZ
+2026-02-16 11:30:05 - INFO - [admin] - [SUEZ CTC] SWAP BRUT APPLIQUÉ (Inversion Jour/Mois détectée)
+2026-02-16 11:30:05 - INFO - [admin] - Charge Suez CTC: 9 lignes
+2026-02-16 11:30:05 - INFO - [admin] - [SUEZ DECH] SWAP BRUT APPLIQUÉ (Inversion Jour/Mois détectée)
+2026-02-16 11:30:05 - INFO - [admin] - Charge Suez DECH: 69 lignes
+2026-02-16 11:30:05 - INFO - [admin] - [SUEZ FACTURE] SWAP BRUT APPLIQUÉ (Inversion Jour/Mois détectée)
+2026-02-16 15:43:04 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : unindent does not match any outer indentation level (verif_heures_ui.py, line 786)
+2026-02-16 15:43:36 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : unexpected indent (verif_heures_ui.py, line 736)
+2026-02-16 15:43:58 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : unexpected indent (verif_heures_ui.py, line 741)
+2026-02-16 15:44:32 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : unindent does not match any outer indentation level (verif_heures_ui.py, line 770)
+2026-02-16 15:44:46 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : unexpected indent (verif_heures_ui.py, line 738)
+2026-02-16 15:45:05 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : unexpected indent (verif_heures_ui.py, line 752)
+2026-02-16 15:45:14 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : expected 'except' or 'finally' block (verif_heures_ui.py, line 752)
+2026-02-16 15:49:06 - INFO - [System] - Connexion réussie: admin
+2026-02-16 15:52:30 - INFO - [System] - Connexion réussie: admin
+2026-02-16 16:04:15 - INFO - [System] - Connexion réussie: admin
+2026-02-16 16:06:52 - INFO - [None] - Connexion réussie: tcartalier
+2026-02-17 10:20:50 - INFO - [System] - Connexion réussie: admin
+2026-02-17 14:16:41 - INFO - [System] - Connexion réussie: admin
+2026-02-17 15:28:10 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : unindent does not match any outer indentation level (verif_heures_ui.py, line 1158)
+2026-02-18 09:03:19 - INFO - [System] - Connexion réussie: admin
+2026-02-18 14:38:10 - INFO - [System] - Connexion réussie: ilemaistre
+2026-02-18 14:39:46 - INFO - [ilemaistre] - Début traitement SUEZ
+2026-02-18 14:39:46 - INFO - [ilemaistre] - Charge Suez CTC: 20 lignes
+2026-02-18 14:39:46 - INFO - [ilemaistre] - Charge Suez DECH: 129 lignes
+2026-02-18 14:53:44 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 14:53:44 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 14:53:44 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 14:58:03 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 14:58:03 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 14:58:03 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 14:58:06 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 14:58:06 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 14:58:06 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:04:16 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:04:16 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:04:16 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:09:55 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:09:55 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:09:56 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:10:14 - INFO - [System] - Connexion réussie: admin
+2026-02-18 15:10:28 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:10:28 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:10:29 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:12:17 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:12:17 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:12:17 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:19:54 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:19:54 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:19:54 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:20:48 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:20:48 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:20:49 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:29:29 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:29:29 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:29:29 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:31:51 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:31:51 - ERROR - [admin] - Erreur chargement CTC: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:31:51 - ERROR - [admin] - Erreur chargement DECH: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:31:53 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:31:53 - ERROR - [admin] - Erreur chargement CTC: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:31:53 - ERROR - [admin] - Erreur chargement DECH: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:31:53 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:31:53 - ERROR - [admin] - Erreur chargement CTC: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:31:53 - ERROR - [admin] - Erreur chargement DECH: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:31:53 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:31:53 - ERROR - [admin] - Erreur chargement CTC: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:31:54 - ERROR - [admin] - Erreur chargement DECH: name 'v_str' is not defined
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1661, in charger_suez_terrain
+    df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/series.py", line 4943, in apply
+    ).apply()
+      ^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1422, in apply
+    return self.apply_standard()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/apply.py", line 1502, in apply_standard
+    mapped = obj._map_values(
+             ^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/base.py", line 925, in _map_values
+    return algorithms.map_array(arr, mapper, na_action=na_action, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/amine/projects/verif_exutoire/.venv/lib/python3.12/site-packages/pandas/core/algorithms.py", line 1743, in map_array
+    return lib.map_infer(values, mapper, convert=convert)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pandas/_libs/lib.pyx", line 2999, in pandas._libs.lib.map_infer
+  File "/home/amine/projects/verif_exutoire/app.py", line 229, in convertir_date_robuste
+    if sep in v_str:
+              ^^^^^
+NameError: name 'v_str' is not defined
+2026-02-18 15:33:10 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:33:10 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:33:10 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:34:47 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:34:47 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:34:47 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:51:52 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:51:52 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:51:52 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-18 15:58:14 - INFO - [admin] - Début traitement SUEZ
+2026-02-18 15:58:14 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-18 15:58:14 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-19 08:56:03 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 08:56:40 - INFO - [System] - Connexion réussie: admin
+2026-02-19 08:57:21 - INFO - [System] - Connexion réussie: admin
+2026-02-19 09:00:45 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:00:45 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:00:46 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-19 09:08:20 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-02-19 09:08:31 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-02-19 09:08:36 - INFO - [System] - Connexion réussie: admin
+2026-02-19 09:08:58 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:08:58 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:08:58 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-19 09:21:44 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:21:44 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:21:44 - INFO - [admin] - Charge Suez DECH: 141 lignes
+2026-02-19 09:21:58 - INFO - [System] - Connexion réussie: admin
+2026-02-19 09:22:12 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:22:12 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:22:13 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:54 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:54 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:37:54 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:55 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:55 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:37:55 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:55 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:55 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:37:55 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:57 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:57 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:37:58 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:58 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:58 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:37:58 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:58 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:58 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:37:58 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:58 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:37:59 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:59 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 09:37:59 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:37:59 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:38:00 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:42:03 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:45:43 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:46:27 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:46:59 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:46:59 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:46:59 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:47:07 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:47:07 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:47:07 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:47:17 - INFO - [System] - Connexion réussie: admin
+2026-02-19 09:47:29 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:47:29 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:47:29 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:49:45 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:50:14 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:50:14 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:50:14 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:50:27 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:54:58 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:56:12 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 09:56:12 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 09:56:13 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 09:58:57 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:59:35 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 09:59:35 - ERROR - [System] - Erreur chargement CTC: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1664, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 09:59:35 - ERROR - [System] - Erreur chargement DECH: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1664, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:01:02 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:01:03 - ERROR - [System] - Erreur chargement CTC: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1665, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:01:03 - ERROR - [System] - Erreur chargement DECH: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1665, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:05:56 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:05:56 - ERROR - [System] - Erreur chargement CTC: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1691, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:05:56 - ERROR - [System] - Erreur chargement DECH: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1691, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:12:14 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:12:14 - ERROR - [System] - Erreur chargement CTC: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1688, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:12:15 - ERROR - [System] - Erreur chargement DECH: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1688, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:15:07 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:15:07 - ERROR - [System] - Erreur chargement CTC: 'str' object has no attribute 'seek'
+Traceback (most recent call last):
+  File "/home/amine/projects/verif_exutoire/app.py", line 1688, in charger_suez_terrain
+    f.seek(0); df = pd.read_excel(f, header=idx, dtype=str); cols_map = {}
+    ^^^^^^
+AttributeError: 'str' object has no attribute 'seek'
+2026-02-19 10:15:07 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:15:41 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 10:15:42 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 10:15:42 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 10:15:53 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:15:53 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:15:53 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:19:27 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:19:27 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:19:27 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:20:14 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:20:14 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:20:15 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:21:13 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:21:14 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:21:14 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:25:04 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:25:04 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:25:04 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:26:44 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:26:45 - INFO - [System] - Standard Path. Index=3. Columns: ['Date', 'Jour', 'Chauffeur', 'Immatriculation', 'Num Bon', 'TypeContenant', 'Description', 'NChantier', 'Exutoire', 'Num TP Manuel', 'NbrBons', 'QuantiteLigne']
+2026-02-19 10:26:45 - INFO - [System] - Generated Map: {'Date': 'Date_Ref', 'Chauffeur': 'Chauffeur', 'Immatriculation': 'Immatriculation', 'Num Bon': 'Num Bon', 'Description': 'Matiere_T', 'Num TP Manuel': 'Num Ticket', 'NbrBons': 'Num Bon', 'QuantiteLigne': 'Poids_Terrain'}
+2026-02-19 10:26:45 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:26:45 - INFO - [System] - Standard Path. Index=2. Columns: ['DATE', 'isFerie', 'JOUR', 'NATURE', 'Exutoire', 'TypeContenant', 'NChantier', 'Num TP Manuel', 'N°BON DE VIDAGE', 'CHAUFFEUR', 'CAMION', 'QuantiteLigne']
+2026-02-19 10:26:45 - INFO - [System] - Generated Map: {'DATE': 'Date_Ref', 'NATURE': 'Matiere_T', 'Num TP Manuel': 'Num Ticket', 'N°BON DE VIDAGE': 'Num Ticket', 'CHAUFFEUR': 'Chauffeur', 'CAMION': 'Immatriculation', 'QuantiteLigne': 'Poids_Terrain'}
+2026-02-19 10:26:45 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:27:59 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:27:59 - INFO - [System] - Standard Path. Index=3. Columns: ['Date', 'Jour', 'Chauffeur', 'Immatriculation', 'Num Bon', 'TypeContenant', 'Description', 'NChantier', 'Exutoire', 'Num TP Manuel', 'NbrBons', 'QuantiteLigne']
+2026-02-19 10:27:59 - INFO - [System] - Generated Map: {'Date': 'Date_Ref', 'Chauffeur': 'Chauffeur', 'Immatriculation': 'Immatriculation', 'Num Bon': 'Num Bon', 'Description': 'Matiere_T', 'Num TP Manuel': 'Num Ticket', 'NbrBons': 'Num Bon', 'QuantiteLigne': 'Poids_Terrain'}
+2026-02-19 10:27:59 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:27:59 - INFO - [System] - Standard Path. Index=2. Columns: ['DATE', 'isFerie', 'JOUR', 'NATURE', 'Exutoire', 'TypeContenant', 'NChantier', 'Num TP Manuel', 'N°BON DE VIDAGE', 'CHAUFFEUR', 'CAMION', 'QuantiteLigne']
+2026-02-19 10:27:59 - INFO - [System] - Generated Map: {'DATE': 'Date_Ref', 'NATURE': 'Matiere_T', 'Num TP Manuel': 'Num Ticket', 'N°BON DE VIDAGE': 'Num Ticket', 'CHAUFFEUR': 'Chauffeur', 'CAMION': 'Immatriculation', 'QuantiteLigne': 'Poids_Terrain'}
+2026-02-19 10:27:59 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:28:51 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:28:51 - INFO - [System] - Standard Path. Index=3. Columns: ['Date', 'Jour', 'Chauffeur', 'Immatriculation', 'Num Bon', 'TypeContenant', 'Description', 'NChantier', 'Exutoire', 'Num TP Manuel', 'NbrBons', 'QuantiteLigne']
+2026-02-19 10:28:51 - INFO - [System] - Generated Map: {'Date': 'Date_Ref', 'Chauffeur': 'Chauffeur', 'Immatriculation': 'Immatriculation', 'Num Bon': 'Num Bon', 'Description': 'Matiere_T', 'Num TP Manuel': 'Num Ticket', 'NbrBons': 'Num Bon', 'QuantiteLigne': 'Poids_Terrain'}
+2026-02-19 10:28:51 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:28:51 - INFO - [System] - Standard Path. Index=2. Columns: ['DATE', 'isFerie', 'JOUR', 'NATURE', 'Exutoire', 'TypeContenant', 'NChantier', 'Num TP Manuel', 'N°BON DE VIDAGE', 'CHAUFFEUR', 'CAMION', 'QuantiteLigne']
+2026-02-19 10:28:51 - INFO - [System] - Generated Map: {'DATE': 'Date_Ref', 'NATURE': 'Matiere_T', 'Num TP Manuel': 'Num Ticket', 'N°BON DE VIDAGE': 'Num Bon', 'CHAUFFEUR': 'Chauffeur', 'CAMION': 'Immatriculation', 'QuantiteLigne': 'Poids_Terrain'}
+2026-02-19 10:28:51 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:32:45 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 10:32:45 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 10:32:45 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 10:33:35 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:33:35 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:33:36 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:34:06 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-19 10:34:07 - INFO - [System] - Charge Suez CTC: 20 lignes
+2026-02-19 10:34:07 - INFO - [System] - Charge Suez DECH: 129 lignes
+2026-02-19 10:50:32 - INFO - [admin] - Début traitement SUEZ
+2026-02-19 10:50:33 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-19 10:50:33 - INFO - [admin] - Charge Suez DECH: 129 lignes
+2026-02-19 14:36:44 - WARNING - [System] - Echec connexion pour utilisateur: tcartalier
+2026-02-19 14:37:22 - INFO - [System] - Connexion réussie: tcartalier
+2026-02-20 09:39:59 - INFO - [System] - Connexion réussie: admin
+2026-02-20 10:22:56 - INFO - [admin] - Début traitement VALENE
+2026-02-20 10:22:56 - INFO - [admin] - Charge Valene PAP: 465 lignes
+2026-02-20 10:22:56 - INFO - [admin] - Charge Valene PAV: 91 lignes
+2026-02-20 10:22:56 - INFO - [admin] - Charge Valene SOTREMA2: 90 lignes
+2026-02-20 10:41:40 - INFO - [System] - Connexion réussie: ilemaistre
+2026-02-20 10:42:20 - INFO - [ilemaistre] - Début traitement SUEZ
+2026-02-20 10:42:20 - INFO - [ilemaistre] - Charge Suez CTC: 20 lignes
+2026-02-20 10:42:20 - INFO - [ilemaistre] - Charge Suez DECH: 132 lignes
+2026-02-20 10:44:07 - INFO - [System] - Connexion réussie: admin
+2026-02-20 10:44:39 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 10:46:58 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 10:47:46 - INFO - [admin] - Début traitement VALENE
+2026-02-20 10:47:46 - INFO - [admin] - Charge Valene PAP: 465 lignes
+2026-02-20 10:47:46 - INFO - [admin] - Charge Valene PAV: 91 lignes
+2026-02-20 10:47:47 - INFO - [admin] - Charge Valene SOTREMA2: 82 lignes
+2026-02-20 10:52:36 - INFO - [admin] - Début traitement VALENE
+2026-02-20 10:52:36 - INFO - [admin] - Charge Valene PAP: 465 lignes
+2026-02-20 10:52:36 - INFO - [admin] - Charge Valene PAV: 91 lignes
+2026-02-20 10:52:36 - INFO - [admin] - Charge Valene SOTREMA2: 82 lignes
+2026-02-20 11:14:11 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 11:17:35 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 11:19:22 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 11:44:39 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 11:48:39 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 11:48:39 - INFO - [System] - Début traitement SUEZ
+2026-02-20 11:48:39 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 11:48:39 - INFO - [System] - Charge Suez DECH: 162 lignes
+2026-02-20 11:50:33 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 11:50:33 - INFO - [System] - Début traitement SUEZ
+2026-02-20 11:50:33 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 11:50:33 - INFO - [System] - Charge Suez DECH: 162 lignes
+2026-02-20 11:50:50 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 11:50:51 - INFO - [System] - Début traitement SUEZ
+2026-02-20 11:50:51 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 11:50:51 - INFO - [System] - Charge Suez DECH: 162 lignes
+2026-02-20 12:09:20 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 12:09:20 - ERROR - [System] - Erreur charger_dupille: 'str' object has no attribute 'seek'
+2026-02-20 12:09:20 - ERROR - [System] - Erreur charger_dupille: 'str' object has no attribute 'seek'
+2026-02-20 12:09:20 - ERROR - [System] - Erreur charger_dupille: 'str' object has no attribute 'seek'
+2026-02-20 12:10:08 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 12:10:09 - INFO - [System] - Charge Suez TER: 292 lignes
+2026-02-20 12:10:09 - INFO - [System] - Charge Suez TER: 30 lignes
+2026-02-20 12:10:09 - INFO - [System] - Charge Suez TER: 162 lignes
+2026-02-20 12:15:04 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 12:15:04 - INFO - [System] - Début traitement SUEZ
+2026-02-20 12:15:04 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 12:15:05 - INFO - [System] - Charge Suez DECH: 162 lignes
+2026-02-20 12:15:22 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 12:15:22 - INFO - [System] - Début traitement SUEZ
+2026-02-20 12:15:22 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 12:15:22 - INFO - [System] - Charge Suez DECH: 162 lignes
+2026-02-20 12:15:55 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 12:15:55 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 12:33:57 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 12:33:57 - INFO - [System] - Début traitement SUEZ
+2026-02-20 12:33:57 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 12:33:58 - INFO - [System] - Charge Suez DECH: 162 lignes
+2026-02-20 12:34:41 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-20 12:34:41 - INFO - [System] - Début traitement SUEZ
+2026-02-20 12:34:41 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-20 12:34:41 - INFO - [System] - Charge Suez DECH: 162 lignes
+2026-02-20 14:31:29 - INFO - [admin] - Début traitement SUEZ
+2026-02-20 14:31:29 - INFO - [admin] - Charge Suez CTC: 20 lignes
+2026-02-20 14:31:29 - INFO - [admin] - Charge Suez DECH: 132 lignes
+2026-02-23 08:02:17 - INFO - [System] - Connexion réussie: admin
+2026-02-23 09:54:06 - INFO - [System] - Connexion réussie: admin
+2026-02-23 16:17:56 - WARNING - [System] - Echec connexion pour utilisateur: 
+2026-02-24 09:31:50 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-02-24 09:31:55 - INFO - [System] - Connexion réussie: admin
+2026-02-24 09:34:59 - ERROR - [admin] - Erreur Migration : (psycopg2.OperationalError) SSL connection has been closed unexpectedly
+
+[SQL: SELECT column_name FROM information_schema.columns WHERE table_name = 'verif_tonnage_historique' AND column_name = 'isActive']
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-02-24 09:35:43 - ERROR - [admin] - Erreur Migration : (psycopg2.OperationalError) connection to server at "localhost" (127.0.0.1), port 5432 failed: FATAL:  database "dashboard_db" does not exist
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-02-24 09:47:38 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-24 09:48:42 - INFO - [System] - Connexion réussie: admin
+2026-02-24 12:13:00 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-24 12:34:21 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-24 12:34:21 - ERROR - [System] - Erreur d'importation de verif_heures_ui : No module named 'scipy'
+2026-02-24 12:34:23 - WARNING - [admin] - Impossible de vérifier la table anomalies : No module named 'scipy'
+2026-02-24 12:34:24 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : No module named 'scipy'
+2026-02-24 12:34:25 - WARNING - [admin] - Impossible de vérifier la table anomalies : No module named 'scipy'
+2026-02-24 12:34:28 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : No module named 'scipy'
+2026-02-24 12:34:29 - WARNING - [admin] - Impossible de vérifier la table anomalies : No module named 'scipy'
+2026-02-24 12:34:33 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : No module named 'scipy'
+2026-02-24 12:34:34 - WARNING - [admin] - Impossible de vérifier la table anomalies : No module named 'scipy'
+2026-02-24 12:34:51 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-24 12:34:51 - WARNING - [admin] - Impossible de vérifier la table anomalies : No module named 'scipy'
+2026-02-24 12:35:53 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-24 12:58:48 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-24 12:59:32 - INFO - [System] - Connexion réussie: admin
+2026-02-24 13:11:08 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-24 13:26:38 - INFO - [System] - Connexion réussie: admin
+2026-02-25 08:47:58 - INFO - [System] - Connexion réussie: admin
+2026-02-25 10:16:08 - INFO - [System] - Connexion réussie: tcartalier
+2026-02-25 10:46:55 - INFO - [None] - Connexion réussie: clanselle
+2026-02-25 11:23:46 - INFO - [None] - Connexion réussie: admin
+2026-02-25 11:24:39 - INFO - [None] - Connexion réussie: test
+2026-02-25 11:42:54 - INFO - [System] - Connexion réussie: ilemaistre
+2026-02-25 11:43:41 - INFO - [ilemaistre] - Début traitement SUEZ
+2026-02-25 11:43:41 - INFO - [ilemaistre] - Charge Suez CTC: 29 lignes
+2026-02-25 11:43:41 - INFO - [ilemaistre] - Charge Suez DECH: 186 lignes
+2026-02-25 11:56:21 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-25 11:56:41 - INFO - [System] - Connexion réussie: ilemaistre
+2026-02-25 12:03:01 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-25 12:03:36 - INFO - [System] - Connexion réussie: admin
+2026-02-25 12:04:00 - INFO - [System] - Connexion réussie: ilemaistre
+2026-02-25 15:00:31 - INFO - [System] - Connexion réussie: ilemaistre
+2026-02-25 18:53:55 - INFO - [System] - Connexion réussie: ilemaistre
+2026-02-25 18:56:00 - INFO - [ilemaistre] - Début traitement SUEZ
+2026-02-25 18:56:00 - INFO - [ilemaistre] - Charge Suez CTC: 29 lignes
+2026-02-25 18:56:01 - INFO - [ilemaistre] - Charge Suez DECH: 186 lignes
+2026-02-26 08:51:38 - INFO - [System] - Connexion réussie: admin
+2026-02-26 09:37:10 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 09:37:11 - INFO - [System] - Charge Suez CTC: 30 lignes
+2026-02-26 09:37:33 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 09:42:47 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 09:47:15 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 10:05:02 - INFO - [System] - Connexion réussie: admin
+2026-02-26 10:13:57 - INFO - [admin] - Début traitement SUEZ
+2026-02-26 10:13:57 - INFO - [admin] - Charge Suez CTC: 29 lignes
+2026-02-26 10:13:57 - INFO - [admin] - Charge Suez DECH: 186 lignes
+2026-02-26 10:14:42 - INFO - [admin] - Début traitement SUEZ
+2026-02-26 10:14:42 - INFO - [admin] - Charge Suez CTC: 29 lignes
+2026-02-26 10:14:43 - INFO - [admin] - Charge Suez DECH: 186 lignes
+2026-02-26 10:16:08 - INFO - [admin] - Début traitement SUEZ
+2026-02-26 10:16:08 - INFO - [admin] - Charge Suez CTC: 29 lignes
+2026-02-26 10:16:08 - INFO - [admin] - Charge Suez DECH: 186 lignes
+2026-02-26 10:36:48 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 10:44:47 - INFO - [System] - Connexion réussie: admin
+2026-02-26 10:47:59 - WARNING - [None] - Echec connexion pour utilisateur: admin
+2026-02-26 10:48:06 - INFO - [None] - Connexion réussie: admin
+2026-02-26 10:51:09 - INFO - [admin] - Début traitement SUEZ
+2026-02-26 10:51:09 - INFO - [admin] - Charge Suez CTC: 29 lignes
+2026-02-26 10:51:10 - INFO - [admin] - Charge Suez DECH: 186 lignes
+2026-02-26 10:54:44 - INFO - [admin] - Début traitement SUEZ
+2026-02-26 10:54:44 - INFO - [admin] - Charge Suez CTC: 29 lignes
+2026-02-26 10:54:44 - INFO - [admin] - Charge Suez DECH: 186 lignes
+2026-02-26 10:55:20 - INFO - [admin] - Début traitement SUEZ
+2026-02-26 10:55:20 - INFO - [admin] - Charge Suez CTC: 29 lignes
+2026-02-26 10:55:20 - INFO - [admin] - Charge Suez DECH: 186 lignes
+2026-02-26 10:55:25 - INFO - [admin] - Début traitement SUEZ
+2026-02-26 10:55:25 - INFO - [admin] - Charge Suez CTC: 29 lignes
+2026-02-26 10:55:25 - INFO - [admin] - Charge Suez DECH: 186 lignes
+2026-02-26 11:12:52 - INFO - [System] - Connexion réussie: admin

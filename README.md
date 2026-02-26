@@ -4,6 +4,11 @@
 **Date :** 12/12/2025
 **Sujet :** Automatisation de la vérification des tonnages (Exutoire de Valène)
 
+> 📘 **Documentation Mise à Jour (Février 2026)**
+>
+> Consultez le **[MANUEL UTILISATEUR](MANUEL_UTILISATEUR.md)** pour la documentation complète de la nouvelle version Web (Streamlit) incluant SUEZ, PICHETA, DUPILLE et le module RH.
+
+
 ---
 
 ## 1. Le Besoin Initial

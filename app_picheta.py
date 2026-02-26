@@ -281,7 +281,7 @@ def charger_picheta(chemin, source):
         df = df.loc[:, ~df.columns.duplicated()]
 
         if "Client" not in df.columns:
-            df["Client"] = f"PICHETA {source}"
+            df["Client"] = f"PICHETA GPSEO {source}"
 
         if "Date_Ref" in df.columns:
             df["Date_Ref"] = df["Date_Ref"].apply(convertir_date_robuste)
@@ -579,7 +579,7 @@ def lancer_analyse():
             merged['DT_Ref'] = pd.to_datetime(merged['Date_Ref'], errors='coerce')
             merged = merged[(merged['DT_Ref'] >= d_deb) & (merged['DT_Ref'] <= d_fin)]
 
-        merged['Exutoire'] = "PICHETA"
+        merged['Exutoire'] = "PICHETA GPSEO"
         merged['Poids_Terrain'] = np.floor(pd.to_numeric(merged['Poids_Terrain'], errors='coerce').fillna(0) * 100) / 100
         merged['Poids_Facture'] = np.floor(pd.to_numeric(merged['Poids_Facture'], errors='coerce').fillna(0) * 100) / 100
         merged['Ecart'] = merged['Poids_Terrain'] - merged['Poids_Facture']
@@ -666,7 +666,7 @@ def lancer_analyse():
         bouton_lancer.config(text="LANCER L'ANALYSE", state="normal")
 
 # --- DESIGN ---
-root = tk.Tk(); root.title("PICHETA"); root.geometry("600x650"); root.configure(bg="#f0f2f5")
+root = tk.Tk(); root.title("PICHETA GPSEO"); root.geometry("600x650"); root.configure(bg="#f0f2f5")
 
 def browse(e): 
     f = filedialog.askopenfilename()
@@ -680,7 +680,7 @@ def ajout_champ(txt):
     return e
 
 tk.Frame(root,bg="#2c3e50",height=50).pack(fill="x")
-tk.Label(root,text="INTERFACE PICHETA",font=("Arial",16,"bold"),bg="#2c3e50",fg="white").place(x=200,y=10)
+tk.Label(root,text="INTERFACE PICHETA GPSEO",font=("Arial",16,"bold"),bg="#2c3e50",fg="white").place(x=200,y=10)
 
 tk.Label(root,text="Fichiers Terrain",bg="#f0f2f5",font=("bold",11),fg="#2c3e50").pack(pady=(20,10))
 ent_ctc=ajout_champ("Fichier CTC Gravats")
