@@ -232,7 +232,7 @@ def process_suez(f_ctc, f_dech, f_fac):
                 match2 = match2.drop_duplicates(subset=['Num Ticket_F'], keep='first')
 
             if not match2.empty:
-                match2['Methode'] = '2. Smart Tolérant'
+                match2['Methode'] = '2. Rapprochement Tolérant'
                 match2['_merge'] = 'both'
 
                 if 'Num Ticket_F' in match2.columns:
@@ -291,7 +291,7 @@ def process_suez(f_ctc, f_dech, f_fac):
                          match3 = candidates_3.drop_duplicates(subset=['Date_Ref_T', 'Poids_Terrain'], keep='first')
                      
                      if not match3.empty:
-                         match3['Methode'] = '3. Match Flex Date'
+                         match3['Methode'] = '3. Rapprochement Date Flexible'
                          match3['_merge'] = 'both'
                          match3['Date_Ref'] = match3['Date_Ref_T']
                          if 'Num Ticket_F' in match3.columns:
@@ -316,11 +316,10 @@ def process_suez(f_ctc, f_dech, f_fac):
          if 'Date_Obj' in final_f.columns: final_f = final_f.drop(columns=['Date_Obj'])
 
     orph_t = final_t.rename(columns={c: c + '_T' for c in cols_ter})
-    orph_f = final_f.rename(columns={c: c + '_F' for c in cols_ref_list})
+    orph_f = l_ref.rename(columns={c: c + '_F' for c in cols_ref_list})
     
     orph_t['_merge'] = 'left_only'
     orph_t['Methode'] = 'Non Trouvé'
-    orph_f['_merge'] = 'right_only'
     orph_f['Methode'] = 'Non Trouvé'
 
     merged = pd.concat([match1, match2, match3, orph_t, orph_f], ignore_index=True)

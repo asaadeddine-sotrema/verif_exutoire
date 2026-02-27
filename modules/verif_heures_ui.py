@@ -1051,26 +1051,6 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
             if not df_daily.empty:
                 df_daily = df_daily[df_daily['Employé'].isin(selected_employes)]
         
-        # [NEW] FILTRE METIER (ROLES)
-        # On ne veut garder que les Chauffeurs et Equipiers
-        roles_dict = load_employee_roles(engine)
-        if roles_dict:
-             def is_target_role(nom):
-                 # Si on ne connait pas le rôle, on garde ou pas ? 
-                 # Le user a dit "que les chauffeurs et equipiers". Donc si on sait pas, on vire.
-                 # MAIS si la table est vide (pas de planning chargé), on risque de tout masquer.
-                 # Stratégie : Si table vide -> On montre tout. Si table remplie -> On filtre.
-                 role = roles_dict.get(nom, "").upper()
-                 target_keywords = ['CHAUFFEUR', 'EQUIPIER', 'SPL', 'GRUE', 'APPRENTI', 'RIPEUR']
-                 return any(k in role for k in target_keywords)
-
-             # On applique le filtre seulement si on a des données de rôles
-             df_filtered = df_filtered[df_filtered['Employé'].apply(is_target_role)]
-             if not df_daily.empty:
-                 df_daily = df_daily[df_daily['Employé'].apply(is_target_role)]
-             
-             if df_filtered.empty:
-                 st.warning("⚠️ Aucune donnée ne correspond aux filtres 'Chauffeur / Équipier'. Avez-vous pensé à charger un Planning pour mettre à jour les qualifications ?")
             
         # KPIs Overview
         try:

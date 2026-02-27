@@ -336,7 +336,7 @@ def process_valoseine(f_ter, f_fac):
                 else:
                     match2 = candidates.drop_duplicates(subset=['Key_Date', 'Poids_Terrain'], keep='first')
                 if not match2.empty:
-                    match2['Methode'] = '2. Smart Match'; match2['_merge'] = 'both'
+                    match2['Methode'] = '2. Rapprochement Intelligent'; match2['_merge'] = 'both'
                     matched_uids_ter = (match2['Key_Date'].astype(str) + "_" + match2['Poids_Terrain'].astype(str)).tolist()
                     l_ter['_UID'] = l_ter['Key_Date'].astype(str) + "_" + l_ter['Poids_Terrain'].astype(str)
                     final_t = l_ter[~l_ter['_UID'].isin(matched_uids_ter)].drop(columns=['_UID'])

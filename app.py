@@ -415,6 +415,21 @@ def expand_dupille_rows(df):
             
     return df
 
+# =============================================================================
+# IMPORTS DES MODULES DE TRAITEMENT (MODULARISATION)
+# =============================================================================
+from modules.verif_suez import charger_suez_terrain, process_suez, normalize_site_key, check_site_keys
+from modules.verif_picheta import charger_picheta, process_picheta
+from modules.verif_valene import charger_valene, process_valene
+from modules.verif_azalys import charger_azalys, process_azalys, charger_valoseine_enc, process_valoseine_enc
+from modules.verif_vert_compost_smirtom import charger_vert_compost_smirtom, process_vert_compost_smirtom
+from modules.verif_dupille import charger_dupille, charger_dupille_facture, process_dupille
+from modules.verif_satel import charger_satel_smirtom_enc, process_satel_smirtom_enc
+
+# =============================================================================
+# UTILITAIRES COMMUNS
+# =============================================================================
+
 def clean_plate(texte):
     if pd.isna(texte): return ""
     txt = str(texte).upper().strip()
@@ -445,7 +460,6 @@ def check_client_compatibility(row, col_int, col_ext):
 # LOGIQUE DE MATCHING & NORMALISATION
 # =============================================================================
 
-from modules.verif_suez import normalize_site_key, check_site_keys
 # (normalize_site_key and check_site_keys moved to modules/verif_suez.py)
 
 def resolve_col(df, col_base):
@@ -549,527 +563,7 @@ def save_to_db(df, engine):
 # MODULE DUPILLE
 # =============================================================================
 
-def charger_dupille(f):
-    try:
-        # Heuristic for detecting the header row (Terrain DUPILLE JAN26.xls)
-        temp = pd.read_excel(f, header=None, nrows=20)
-        idx = 0
-        for i, r in temp.iterrows():
-            row_str = str(r.values).lower()
-            if "num ticket" in row_str and "date" in row_str:
-                idx = i; break
-                
-        f.seek(0)
-        df = pd.read_excel(f, header=idx) # [FIX] Remove dtype=str to allow proper Date/Float reading
-        
-        cols = {}
-        for c in df.columns:
-            cl = str(c).lower().strip()
-            # Mapping based on "DUPILLE JAN26.xls"
-            if "num bon" in cl: cols[c] = "Num Bon"
-            if "chauffeur" in cl: cols[c] = "Chauffeur"
-            if "immatriculation" in cl or "matière" in cl: 
-                # Be careful, "Immatriculation" is column 3, "Description" (Matiere) is col 4
-                if "immat" in cl: cols[c] = "Immatriculation"
-                elif "description" in cl: cols[c] = "Matiere_T"
-            
-            # Explicit checks if ambiguous
-            if "description" in cl: cols[c] = "Matiere_T"
-            
-            if "num ticket" in cl:
-                if "2" in cl: cols[c] = "Num Ticket 2"
-                else: cols[c] = "Num Ticket"
-            
-            if "nchantier" in cl: cols[c] = "Client"
-            
-            if "poids" in cl and "tonnes" in cl: cols[c] = "Poids_Terrain"
-            
-            if "date" in cl and "jour" not in cl: cols[c] = "Date_Ref"
-            
-        df = df.rename(columns=cols)
-        
-        # [FIX] Ensure text columns are strings
-        for txt_col in ["Num Ticket", "Num Ticket 2", "Client", "Chauffeur", "Immatriculation", "Matiere_T", "Num Bon"]:
-            if txt_col in df.columns:
-                df[txt_col] = df[txt_col].astype(str).replace('nan', '')
-            
-            if "nchantier" in cl: cols[c] = "Client"
-            
-            if "poids" in cl and "tonnes" in cl: cols[c] = "Poids_Terrain"
-            
-            if "date" in cl and "jour" not in cl: cols[c] = "Date_Ref"
-            
-        df = df.rename(columns=cols)
-        
-        # [FIX] Ensure text columns are strings
-        for txt_col in ["Num Ticket", "Num Ticket 2", "Client", "Chauffeur", "Immatriculation", "Matiere_T", "Num Bon"]:
-            if txt_col in df.columns:
-                df[txt_col] = df[txt_col].astype(str).replace('nan', '')
-
-        if "Poids_Terrain" in df.columns:
-            df["Poids_Terrain"] = pd.to_numeric(df["Poids_Terrain"], errors='coerce')
-            
-        # [USER REQUEST] Strict parsing
-        df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
-
-        return df
-    except Exception as e:
-        logger.error(f"Erreur charger_dupille: {e}")
-        return pd.DataFrame()
-
-
-
-def charger_dupille_facture(f_fac):
-    """
-    Charger les factures Dupille multi-onglets (CLIENTS PRIVES, CU GPSEO, etc.).
-    Fusionne les onglets sur la base des colonnes communes.
-    """
-    try:
-        xls = pd.ExcelFile(f_fac)
-        all_sheets = []
-        
-        for sheet_name in xls.sheet_names:
-            # Lire un échantillon pour trouver le header
-            df_sample = pd.read_excel(xls, sheet_name=sheet_name, header=None, nrows=15)
-            header_idx = None
-            for i, row in df_sample.iterrows():
-                row_str = str(row.values).lower()
-                if any(k in row_str for k in ['net', 'poids']) and any(k in row_str for k in ['id', 'ticket']):
-                    header_idx = i
-                    break
-            
-            if header_idx is not None:
-                # Seek back not needed for ExcelFile read
-                df = pd.read_excel(xls, sheet_name=sheet_name, header=header_idx, dtype=str)
-                df = df.dropna(how='all', axis=1)
-                df['Original_Sheet_Name'] = str(sheet_name) # [NEW] Capture sheet name for Activity
-                all_sheets.append(df)
-            else:
-                # Fallback: try reading with header=0
-                df = pd.read_excel(xls, sheet_name=sheet_name, header=0, dtype=str)
-                df['Original_Sheet_Name'] = str(sheet_name) # [NEW] Capture sheet name for Activity
-                all_sheets.append(df)
-
-        if not all_sheets:
-            return pd.DataFrame()
-            
-        # Fusionner - pandas concat aligne automatiquement les colonnes par nom
-        df_final = pd.concat(all_sheets, ignore_index=True)
-        return df_final
-        
-    except Exception as e:
-        st.error(f"Erreur chargement facture Dupille: {e}")
-        return pd.DataFrame()
-
-def process_dupille(f_lb, f_fac):
-    # 1. Charger Terrain
-    df_lb = charger_dupille(f_lb)
-    if df_lb.empty: return pd.DataFrame()
-
-    # [FIX] Apply date repair to Terrain data
-    if 'Date_Ref' in df_lb.columns:
-         # [USER REQUEST] Force DD/MM/YYYY parsing via robust function
-         # Already done in charger_dupille, but strictly ensuring it here if needed or just pass
-         pass
-         
-         # Use Jour column if available (DUPILLE specific)
-         # Column 'Jour' might be present? check charger_dupille
-         # It's not explicitly renamed in charger_dupille so it should be "Jour" or similar
-         
-         # Find 'Jour' col with case insensitivity
-         j_col = None
-         for c in df_lb.columns:
-             if str(c).lower().strip() == 'jour':
-                 j_col = c; break
-         
-         # [NEW] Merge Num Ticket 2 if exists
-         if 'Num Ticket 2' in df_lb.columns and 'Num Ticket' in df_lb.columns:
-             df_lb['Num Ticket'] = df_lb['Num Ticket'].fillna(df_lb['Num Ticket 2'])
-         elif 'Num Ticket 2' in df_lb.columns and 'Num Ticket' not in df_lb.columns:
-             df_lb['Num Ticket'] = df_lb['Num Ticket 2']
-         
-         if j_col:
-             # Clean Jour column: Handle "nan", empty, whitespace
-             df_lb[j_col] = df_lb[j_col].astype(str).replace(r'^\s*$', np.nan, regex=True).replace(['nan', 'NaN', 'None'], np.nan)
-             df_lb[j_col] = df_lb[j_col].ffill()
-             
-             # [USER REQUEST] Disable repair heuristic
-             # df_lb = repair_dates_with_jour(df_lb, 'Date_Ref', j_col, "DUPILLE LB")
-             pass
-         else:
-             # Fallback? No, do NOT use median/majority month as it causes false positives
-             pass
-    
-    # 2. Charger Facture
-    df_fac = charger_dupille_facture(f_fac)
-    
-    # [USER REQUEST] Ignore "COLONNE..."
-    cols_to_drop = [c for c in df_fac.columns if "COLONNE" in str(c).upper()]
-    if cols_to_drop:
-        df_fac = df_fac.drop(columns=cols_to_drop)
-        
-    # Map Facture
-    nc = {}
-    for c in df_fac.columns:
-        cl = str(c).lower().strip()
-        
-        if "ticket" in cl or cl == "id": nc[c] = "Num Ticket"
-        elif "net" in cl: nc[c] = "Poids_Facture" 
-        elif "poids" in cl and "facture" in cl: nc[c] = "Poids_Facture"
-        
-        # [USER REQUEST] EXT Client = lib_zone
-        elif "zone" in cl or "lib_zone" in cl: nc[c] = "Client"  # Used to be Zone, now Client (EXT)
-        elif "client" in cl or "lib_client" in cl: nc[c] = "Ref_Client" # Backup info
-        
-        elif "code matière" in cl or "lib_produit" in cl: nc[c] = "EXT_Matiere"
-        elif "matière" in cl or "produit" in cl: nc[c] = "EXT_Matiere"
-        
-        elif "immatriculation" in cl or "véhicule" in cl: nc[c] = "Immatriculation"
-        elif "transporteur" in cl or "lib_transporteur" in cl: nc[c] = "Transporteur"
-        
-        # [NEW] Detect Num Bon in Invoice
-        elif "bordereau" in cl or "bon de" in cl or (cl.startswith("n") and cl.endswith("bon")): nc[c] = "Num Bon"
-        elif "n° bon" in cl or "num bon" in cl or "bon n" in cl: nc[c] = "Num Bon"
-
-        # Zone is now Client
-        elif "date" in cl or "dates" in cl: nc[c] = "Date_Ref"
-        # Map sheet name to Activité
-        elif "original_sheet_name" in cl: nc[c] = "Activité"
-        
-    df_fac = df_fac.rename(columns=nc)
-    
-    # Handle multiple columns mapping to the same name (e.g. 'net' and 'net (kg)')
-    # by coalescing them into one, instead of just dropping duplicates.
-    target_names = ["Num Ticket", "Poids_Facture", "Client", "EXT_Matiere", "Immatriculation", "Transporteur", "Date_Ref", "Num Bon", "Activité"]
-    for target in target_names:
-        cols_indices = [j for j, name in enumerate(df_fac.columns) if name == target]
-        if len(cols_indices) > 1:
-            # We have duplicates. Coalesce them.
-            combined = df_fac.iloc[:, cols_indices[0]].copy()
-            for idx in cols_indices[1:]:
-                combined = combined.fillna(df_fac.iloc[:, idx])
-            
-            # Drop all columns by that name
-            df_fac = df_fac.loc[:, df_fac.columns != target].copy()
-            # Add back the combined one
-            df_fac[target] = combined
-
-    # Filter: Client (was Zone) must NOT contain "DECHETTERIE PROFESSIONNEL"
-    # Note: File often has "PROFESSIONNEL" (2 Ns). Code might have had 1 N.
-    if "Client" in df_fac.columns:
-        df_fac['Client'] = df_fac['Client'].astype(str).str.upper()
-        # Regex to handle PROFESSIONEL or PROFESSIONNEL
-        df_fac = df_fac[~df_fac['Client'].str.contains(r"DECHETTERIE PROFESSION+EL", regex=True, na=False)]
-
-    # Filter for SOTREMA if Transporteur column exists
-    if "Transporteur" in df_fac.columns:
-        df_fac['Transporteur'] = df_fac['Transporteur'].astype(str).str.upper()
-        # Keep only SOTREMA (or empty if lenient, but user asked specifically for SOTREMA)
-        # Using containment to be safe (e.g. "SOTREMA 78")
-        df_fac = df_fac[df_fac['Transporteur'].str.contains("SOTREMA", na=False)]
-    
-    # Weight Conversion (kg -> T) if explicitly likely
-    if "Poids_Facture" in df_fac.columns:
-        p_f = df_fac.get('Poids_Facture', pd.Series(0, index=df_fac.index))
-        p = pd.to_numeric(p_f, errors='coerce').fillna(0)
-        # Heuristic: if mean > 50, it's kg
-        if p.mean() > 50: p = p / 1000.0
-        df_fac["Poids_Facture"] = p
-        
-    if 'Date_Ref' in df_fac.columns:
-        # [USER REQUEST] Force DD/MM/YYYY parsing via robust function
-        df_fac['Date_Ref'] = df_fac['Date_Ref'].apply(convertir_date_robuste)
-
-    if 'Client' in df_fac.columns:
-        df_fac['Client'] = df_fac['Client'].apply(normaliser_client_dupille)
-        
-    if 'EXT_Matiere' in df_fac.columns:
-        df_fac['EXT_Matiere'] = df_fac['EXT_Matiere'].apply(normaliser_matiere_dupille)
-        
-    # df_fac['Activité'] = 'DUPILLE_FAC' # [REMOVED] Use sheet name instead if available
-    if 'Activité' not in df_fac.columns:
-        df_fac['Activité'] = 'DUPILLE_FAC' # Fallback only
-
-    if 'Num Ticket' in df_fac.columns:
-        df_fac['Num Ticket'] = df_fac['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace(['nan', 'None', '', 'NAN'], np.nan)
-
-    # [NEW] Inject Num Bon from Terrain into Invoice if missing
-    if 'Num Ticket' in df_lb.columns and 'Num Bon' in df_lb.columns:
-        # Create mapping Ticket -> Bon (only valid, non-empty Bons)
-        clean_lb = df_lb.dropna(subset=['Num Ticket', 'Num Bon']).copy()
-        clean_lb['Num Ticket'] = clean_lb['Num Ticket'].astype(str).str.strip()
-        clean_lb['Num Bon'] = clean_lb['Num Bon'].astype(str).str.strip()
-        
-        t_to_b = dict(zip(clean_lb['Num Ticket'], clean_lb['Num Bon']))
-        
-        # Inject into Facture
-        if 'Num Bon' not in df_fac.columns:
-            df_fac['Num Bon'] = np.nan
-        
-        # Fill missing Bons in Facture using Terrain mapping
-        # Fill missing Bons in Facture using Terrain mapping
-        import re
-        def fill_bon(row):
-            b = str(row.get('Num Bon', '')).strip().upper()
-            if b not in ['', 'NAN', 'NONE', '0']:
-                return row.get('Num Bon')
-            
-            # Try to find Bon from Ticket(s)
-            t_str = str(row.get('Num Ticket', '')).upper().strip()
-            if not t_str or t_str in ['NAN', 'NONE']: return np.nan
-            
-            # Split by common separators: space, comma, slash, plus, dash
-            # Be careful with dash if tickets contain dashes, but usually they are numeric
-            # Dupille tickets seem to be numeric.
-            tokens = re.split(r'[ \/,+\-]+', t_str)
-            
-            for token in tokens:
-                token = token.strip()
-                if not token: continue
-                # Lookup
-                found_b = t_to_b.get(token)
-                if found_b: return found_b # Return first match
-            
-            return np.nan
-            
-        df_fac['Num Bon'] = df_fac.apply(fill_bon, axis=1)
-
-    # [USER REQUEST] Aggregate multiple tickets for one bon
-    def aggregate_dupille_df(df, type_suffix):
-        if 'Num Bon' not in df.columns: return df
-        # Clean Bon for grouping; [NEW] Strip leading zeros "0123" -> "123"
-        df['AGG_BON'] = df['Num Bon'].astype(str).str.strip().str.upper().str.lstrip('0').replace(['NAN', '', 'NONE'], np.nan)
-        
-        # Split: rows with valid BON for aggregation
-        mask_bon = df['AGG_BON'].notna()
-        df_to_agg = df[mask_bon].copy()
-        df_rest = df[~mask_bon].copy()
-        
-        if df_to_agg.empty: return df
-        
-        p_col = 'Poids_Terrain' if 'Poids_Terrain' in df.columns else 'Poids_Facture'
-        m_col = 'Matiere_T' if 'Matiere_T' in df.columns else 'EXT_Matiere'
-        
-        # Define grouping columns (common fields that should match for same bon)
-        # [FIX] Group strictly by BON to handle multi-ticket bonuses even if dates/clients differ slightly
-        group_cols = ['AGG_BON']
-        # if 'Activité' in df_to_agg.columns: group_cols.append('Activité') # Keep Activity separate? Unlikely same Bon spans activities.
-        
-        # Intersect with existing columns
-        group_cols = [c for c in group_cols if c in df_to_agg.columns]
-        
-        # Perform Aggregation
-        agg_rules = {
-            p_col: 'sum',
-            'Num Ticket': lambda x: ' / '.join(filter(None, [str(v) for v in sorted(list(set(x)))]))
-        }
-        # Add remaining columns with 'first'
-        for c in df_to_agg.columns:
-            if c not in group_cols and c not in agg_rules and c != 'AGG_BON':
-                agg_rules[c] = 'first'
-        
-        df_agg = df_to_agg.groupby(group_cols, as_index=False).agg(agg_rules)
-        
-        # Cleanup
-        final_df = pd.concat([df_agg, df_rest], ignore_index=True)
-        if 'AGG_BON' in final_df.columns: final_df = final_df.drop(columns=['AGG_BON'])
-        return final_df
-
-    df_lb = aggregate_dupille_df(df_lb, "_T")
-    df_fac = aggregate_dupille_df(df_fac, "_F")
-
-    # 3. Matching Logic (Standard)
-    # -------------------------------------------------------------------------
-    def get_strict_key(row):
-        t = str(row.get('Num Ticket', '')).strip().upper()
-        if t in ['ST', 'NAN', '', 'NONE', '0', 'None', 'NAT']: return np.nan
-        return t
-
-    df_lb['K'] = df_lb.apply(get_strict_key, axis=1)
-    df_fac['K'] = df_fac.apply(get_strict_key, axis=1)
-    
-    # IDs for tracking
-    df_lb['_TMP_ID'] = df_lb.index
-    df_fac['_TMP_ID'] = df_fac.index
-    
-    # 1. Match Exact
-    m1 = pd.merge(df_lb.dropna(subset=['K']), df_fac.dropna(subset=['K']), on='K', how='outer', indicator=True, suffixes=('_T', '_F'))
-    match1 = m1[m1['_merge'] == 'both'].copy()
-    match1['Methode'] = '1. Ticket Exact'
-    
-    ids_t = match1['K'].unique()
-    ids_f = match1['K'].unique()
-    
-    l_ter = df_lb[~df_lb['K'].isin(ids_t)].copy()
-    l_ref = df_fac[~df_fac['K'].isin(ids_f)].copy()
-    
-    # 2. Match Bon (if present)
-    match2 = pd.DataFrame()
-    if 'Num Bon' in l_ter.columns and 'Num Bon' in l_ref.columns:
-         # Need clean bons; [NEW] Strip leading zeros
-         l_ter['B_K'] = l_ter['Num Bon'].astype(str).str.strip().str.upper().str.lstrip('0').replace(['NAN', ''], np.nan)
-         l_ref['B_K'] = l_ref['Num Bon'].astype(str).str.strip().str.upper().str.lstrip('0').replace(['NAN', ''], np.nan)
-         
-         m2 = pd.merge(l_ter.dropna(subset=['B_K']), l_ref.dropna(subset=['B_K']), on='B_K', how='inner', suffixes=('_T', '_F'))
-         # Drop duplicates/Validate?
-         if not m2.empty:
-             match2 = m2.drop_duplicates(subset=['B_K'])
-             match2['Methode'] = '1. Bon Exact'
-             match2['_merge'] = 'both'
-             
-             ids_t2 = match2['_TMP_ID_T'].unique()
-             ids_f2 = match2['_TMP_ID_F'].unique()
-             l_ter = l_ter[~l_ter['_TMP_ID'].isin(ids_t2)]
-             l_ref = l_ref[~l_ref['_TMP_ID'].isin(ids_f2)]
-
-    # 3. Smart Match (Date + Poids)
-    match3_smart = pd.DataFrame()
-    # Ensure all required match columns exist
-    has_poids_t = 'Poids_Terrain' in l_ter.columns
-    has_poids_f = 'Poids_Facture' in l_ref.columns
-    has_date_t = 'Date_Ref' in l_ter.columns
-    has_date_f = 'Date_Ref' in l_ref.columns
-    
-    if not l_ter.empty and not l_ref.empty and has_poids_t and has_poids_f and has_date_t and has_date_f:
-        cols_t = ['_TMP_ID', 'Key_Date', 'Poids_Terrain', 'Key_Site_T', 'Client', 'Matiere_T', 'Num Ticket', 'Num Bon']
-        cols_f = ['_TMP_ID', 'Key_Date', 'Poids_Facture', 'Key_Site_F', 'Client', 'EXT_Matiere', 'Num Ticket', 'Num Bon']      
-        # Standard smart match logic
-        l_ter['Key_Date'] = l_ter['Date_Ref'].apply(lambda d: d.strftime('%Y-%m-%d') if pd.notna(d) else "NAN")
-        l_ref['Key_Date'] = l_ref['Date_Ref'].apply(lambda d: d.strftime('%Y-%m-%d') if pd.notna(d) else "NAN")
-         
-        # [FIX] Avoid merging on "NAN"
-        l_ter_valid = l_ter[l_ter['Key_Date'] != "NAN"].copy()
-        l_ref_valid = l_ref[l_ref['Key_Date'] != "NAN"].copy()
-
-        if not l_ter_valid.empty and not l_ref_valid.empty:
-            m3 = pd.merge(l_ter_valid, l_ref_valid, on='Key_Date', suffixes=('_T', '_F'))
-        else:
-            m3 = pd.DataFrame()
-        if not m3.empty:
-            m3['Delta'] = abs(pd.to_numeric(m3['Poids_Terrain'], errors='coerce') - pd.to_numeric(m3['Poids_Facture'], errors='coerce'))
-            cands = m3[m3['Delta'] <= 0.02].sort_values('Delta')
-            if not cands.empty:
-                match3_smart = cands.drop_duplicates(subset=['_TMP_ID_T'], keep='first').drop_duplicates(subset=['_TMP_ID_F'], keep='first')
-                match3_smart['Methode'] = '2. Smart Match'
-                match3_smart['_merge'] = 'both'
-                 
-                # Cleanup
-                ids_t3 = match3_smart['_TMP_ID_T'].unique()
-                ids_f3 = match3_smart['_TMP_ID_F'].unique()
-                l_ter = l_ter[~l_ter['_TMP_ID'].isin(ids_t3)]
-                l_ref = l_ref[~l_ref['_TMP_ID'].isin(ids_f3)]
-    
-    # 4. Final Concat
-    cols_t = df_lb.columns
-    cols_f = df_fac.columns
-    
-    orph_t = l_ter.rename(columns={c: c + '_T' for c in cols_t})
-    orph_t['_merge'] = 'left_only'; orph_t['Methode'] = 'Non Trouvé'
-    
-    orph_f = l_ref.rename(columns={c: c + '_F' for c in cols_f})
-    orph_f['_merge'] = 'right_only'; orph_f['Methode'] = 'Non Trouvé'
-    
-    final = pd.concat([match1, match2, match3_smart, orph_t, orph_f], ignore_index=True)
-    
-    # Consolidation
-    final['Exutoire'] = "DUPILLE"
-    
-    if 'Num Ticket_F' in final.columns:
-        # Prefer Terrain Ticket IDs (which may be concatenated) for Dupille
-        # Also ensure Num Ticket from Terrain (Num Ticket_T) handles Num Ticket 2 if it wasn't merged earlier (though it should be)
-        t_id = final['Num Ticket_T']
-        if 'Num Ticket 2_T' in final.columns:
-             t_id = t_id.fillna(final['Num Ticket 2_T'])
-             
-        final['Num Ticket'] = t_id.fillna(final.get('Num Ticket_F')).fillna('').astype(str)
-    else:
-        final['Num Ticket'] = resolve_col(final, 'Num Ticket').fillna('').astype(str)
-        
-    final['Num Bon'] = resolve_col(final, 'Num Bon')
-    final['Date_Ref'] = resolve_col(final, 'Date_Ref')
-    
-    # [FIX] Coalesce weights correctly (handle _T / _F suffixes from merges)
-    # Poids Terrain
-    p_t = pd.Series(np.nan, index=final.index)
-    if 'Poids_Terrain' in final.columns: p_t = p_t.fillna(final['Poids_Terrain'])
-    if 'Poids_Terrain_T' in final.columns: p_t = p_t.fillna(final['Poids_Terrain_T'])
-    final['Poids_Terrain'] = pd.to_numeric(p_t, errors='coerce').fillna(0)
-    
-    # Poids Facture
-    p_f = pd.Series(np.nan, index=final.index)
-    if 'Poids_Facture' in final.columns: p_f = p_f.fillna(final['Poids_Facture'])
-    if 'Poids_Facture_F' in final.columns: p_f = p_f.fillna(final['Poids_Facture_F'])
-    final['Poids_Facture'] = pd.to_numeric(p_f, errors='coerce').fillna(0)
-    final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']
-    
-    final['INT Client'] = final.get('Client_T', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
-    final['EXT Client'] = final.get('Client_F', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
-    
-    final['Matiere_T'] = resolve_col(final, 'Matiere_T')
-    final['EXT_Matiere'] = resolve_col(final, 'EXT_Matiere')
-    # [FIX] Resolve Activité: Prioritize Facture (Sheet Name) for Dupille
-    final['Activité'] = final.get('Activité_F', pd.Series(np.nan, index=final.index)).fillna(final.get('Activité', pd.Series(np.nan, index=final.index))).fillna(final.get('Activité_T', pd.Series(np.nan, index=final.index))).fillna("DECH_DUPILLE")
-    
-    # Immat Coalesce (Global Fix Standard)
-    c_ch = final.get('Chauffeur', pd.Series([np.nan]*len(final)))
-    c_ch_t = final.get('Chauffeur_T', pd.Series([np.nan]*len(final)))
-    c_ch_f = final.get('Chauffeur_F', pd.Series([np.nan]*len(final)))
-    final['Chauffeur'] = c_ch.fillna(c_ch_t).fillna(c_ch_f).astype(str).replace(['nan', 'NAN', 'None'], '')
-
-    c_im = final.get('Immatriculation', pd.Series([np.nan]*len(final)))
-    c_im_t = final.get('Immatriculation_T', pd.Series([np.nan]*len(final)))
-    c_im_f = final.get('Immatriculation_F', pd.Series([np.nan]*len(final)))
-    final['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace(['nan', 'NAN', 'None'], '')
-
-    final['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace(['nan', 'NAN', 'None'], '')
-
-    # [FIX] Normalize Terrain Matiere too
-    if 'Matiere_T' in final.columns:
-         final['Matiere_T'] = final['Matiere_T'].apply(normaliser_matiere_dupille)
-
-    # Verifications
-    final['Verif_Tonnes'] = (abs(final['Ecart']) < 0.05).replace({True:'OK', False:'Pb.T'})
-    final['Verif_Exutoire'] = np.where(final['_merge'] == 'both', 'OK', 'Pb.Ext')
-    
-    def check_mat_dupille(row):
-        if row['_merge'] != 'both': return '' # Empty if not matched, to avoid confusion with Pb.Ext column
-        m_t = str(row.get('Matiere_T', '')).upper().strip()
-        m_f = str(row.get('EXT_Matiere', '')).upper().strip()
-        if not m_t or m_t == 'NAN': return 'Pb.Mat' # Missing info
-        
-        # Direct Match
-        if m_t == m_f: return 'OK'
-        # Loose Match
-        if m_t in m_f or m_f in m_t: return 'OK'
-        
-        return 'Pb.Mat'
-
-    final['Verif_Matiere'] = final.apply(check_mat_dupille, axis=1)
-    # Use existing helper `check_client_dupille_strict` if defined or inline
-    # Assuming helper exists from previous code (it was in the file)
-    
-    # Normalize site keys for check
-    final['Key_Site_T_FINAL'] = final['INT Client'].apply(normalize_site_key)
-    final['Key_Site_F_FINAL'] = final['EXT Client'].apply(normalize_site_key)
-    
-    def check_client_dupille_strict(row):
-        k_t = row.get('Key_Site_T_FINAL')
-        k_f = row.get('Key_Site_F_FINAL')
-        if check_site_keys({'Key_Site_T': k_t, 'Key_Site_F': k_f}):
-            return 'OK'
-        c_int = str(row.get('INT Client', '')).upper()
-        c_ext = str(row.get('EXT Client', '')).upper()
-        
-        # [USER REQUEST] Ignore Pb.Clt if EXT Client contains numbers
-        if any(char.isdigit() for char in c_ext): return "OK"
-        
-        if "GPSEO" in c_int and "GPSO" in c_ext: return "OK"
-        if "GPSO" in c_int and "GPSEO" in c_ext: return "OK"
-        return 'Pb.Clt'
-
-    final['Verif_Client'] = final.apply(check_client_dupille_strict, axis=1)
-    
-    return final
+# Logic for DUPILLE moved to modules/verif_dupille.py
 
 
 from modules.verif_suez import restore_columns
@@ -1091,108 +585,13 @@ from modules.verif_picheta import process_picheta, charger_picheta
 # Picheta logic moved to modules/verif_picheta.py
 
 
-from modules.verif_valene import charger_valene, process_valene
 # Valene logic moved to modules/verif_valene.py
 
-def process_valene(f_pap, f_pav, f_sot, f_exp):
-    logger.info("Début traitement VALENE")
-    dfs = []
-    if f_pap: dfs.append(charger_valene(f_pap, "PAP"))
-    if f_pav: dfs.append(charger_valene(f_pav, "PAV"))
-    if f_sot: dfs.append(charger_valene(f_sot, "SOTREMA2"))
-    if not dfs: return pd.DataFrame()
-    df_ter = pd.concat(dfs, ignore_index=True)
-    df_ter['Num Ticket'] = df_ter['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True)
-    try: df_ref = pd.read_excel(f_exp, sheet_name="RPT_RecherchePeseeDetaillee", header=8, dtype=str)
-    except: df_ref = pd.read_excel(f_exp, header=8, dtype=str)
-    cols_ref = {}
-    col_matiere_label = None
-    for c in df_ref.columns:
-        if str(c).strip().lower() == "matière réalisée": col_matiere_label = c; break
-    if not col_matiere_label:
-        for c in df_ref.columns:
-            cl = str(c).lower().strip()
-            if "matière réalisée" in cl and not any(x in cl for x in ["code", "n°", "num", "id", "ref"]): col_matiere_label = c; break
-    if col_matiere_label: cols_ref[col_matiere_label] = "EXT_Matiere"
-    for c in df_ref.columns:
-        if c == col_matiere_label: continue
-        cl = str(c).lower().strip()
-        if "n° de pesée" in cl: cols_ref[c] = "Num Ticket"
-        if "poids" in cl and "net" in cl: cols_ref[c] = "Poids_Facture" 
-        elif "poids de la matière" in cl: cols_ref[c] = "Poids_Facture"
-        if "date d'entrée" in cl or "date de pesée" in cl: cols_ref[c] = "Date_Ref"
-        if "immatriculation" in cl or "véhicule" in cl: cols_ref[c] = "Immatriculation"
-    df_ref = df_ref.rename(columns=cols_ref); df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
-    if 'Num Ticket' in df_ref.columns: df_ref['Num Ticket'] = df_ref['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True)
-    df_ter['Matiere_T'] = df_ter['Matiere_T'].apply(normaliser_matiere_valene)
-    if 'EXT_Matiere' in df_ref.columns: df_ref['EXT_Matiere_Norm'] = df_ref['EXT_Matiere'].apply(normaliser_matiere_valene)
-    else: df_ref['EXT_Matiere_Norm'] = ""
-    merged = pd.merge(df_ter, df_ref, on='Num Ticket', how='outer', indicator=True, suffixes=('_T', '_F'))
-    def restaurer_col(df, nom_col):
-        if nom_col in df.columns: return df[nom_col].replace(r'^\s*$', np.nan, regex=True).fillna(np.nan)
-        col_t, col_f = f"{nom_col}_T", f"{nom_col}_F"
-        s_t = df[col_t].replace(r'^\s*$', np.nan, regex=True) if col_t in df.columns else pd.Series([np.nan]*len(df))
-        s_f = df[col_f].replace(r'^\s*$', np.nan, regex=True) if col_f in df.columns else pd.Series([np.nan]*len(df))
-        return s_t.fillna(s_f)
-    c_cl = merged.get('Client', pd.Series([np.nan]*len(merged)))
-    c_cl_t = merged.get('Client_T', pd.Series([np.nan]*len(merged)))
-    c_cl_f = merged.get('Client_F', pd.Series([np.nan]*len(merged)))
-    merged['Client'] = c_cl.fillna(c_cl_t).fillna(c_cl_f)
-
-    c_dt = merged.get('Date_Ref', pd.Series([np.nan]*len(merged)))
-    c_dt_t = merged.get('Date_Ref_T', pd.Series([np.nan]*len(merged)))
-    c_dt_f = merged.get('Date_Ref_F', pd.Series([np.nan]*len(merged)))
-    merged['Date_Ref'] = c_dt.fillna(c_dt_t).fillna(c_dt_f)
-
-    c_ch = merged.get('Chauffeur', pd.Series([np.nan]*len(merged)))
-    c_ch_t = merged.get('Chauffeur_T', pd.Series([np.nan]*len(merged)))
-    c_ch_f = merged.get('Chauffeur_F', pd.Series([np.nan]*len(merged)))
-    merged['Chauffeur'] = c_ch.fillna(c_ch_t).fillna(c_ch_f)
-
-    c_im = merged.get('Immatriculation', pd.Series([np.nan]*len(merged)))
-    c_im_t = merged.get('Immatriculation_T', pd.Series([np.nan]*len(merged)))
-    c_im_f = merged.get('Immatriculation_F', pd.Series([np.nan]*len(merged)))
-    merged['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f)
-    merged['Exutoire'] = "VALENE"
-    merged['Poids_Terrain'] = np.floor(pd.to_numeric(merged['Poids_Terrain'], errors='coerce').fillna(0) * 100) / 100
-    merged['Poids_Facture'] = np.floor(pd.to_numeric(merged['Poids_Facture'], errors='coerce').fillna(0) * 100) / 100
-    
-    merged['Poids_Terrain'] = np.where(merged['Poids_Terrain'] >= 99, 0, merged['Poids_Terrain'])
-    merged['Poids_Facture'] = np.where(merged['Poids_Facture'] >= 99, 0, merged['Poids_Facture'])
-    
-    merged['Ecart'] = merged['Poids_Terrain'] - merged['Poids_Facture']
-    merged['Date_Ref'] = merged['Date_Ref']
-    merged['INT Client'] = merged.get('Client_T', merged.get('Client', '')).fillna('')
-    merged['EXT Client'] = merged.get('Client_F', '').fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
-    merged['Verif_Exutoire'] = (merged['_merge'] == 'both').replace({True:'OK', False:'Pb.Ext'})
-    merged['Verif_Matiere'] = (merged['Matiere_T'] == merged['EXT_Matiere_Norm']).replace({True:'OK', False:'Pb.Mat'})
-    merged['Verif_Tonnes'] = (abs(merged['Ecart']) < 0.005).replace({True:'OK', False:'Pb.T'})
-    
-    merged['INT Client'] = merged['INT Client'].astype(str).replace(['CU GPSO', 'GPSO'], 'GPSEO').replace(['nan', 'NAN', 'None'], '')
-    merged['Client'] = merged['Client'].astype(str).replace(['CU GPSO', 'GPSO'], 'GPSEO')
-
-    def verif_client(row):
-        c_int = str(row.get('INT Client', '')).upper().strip(); c_ext = str(row.get('EXT Client', '')).upper().strip(); act = str(row.get('Activité', '')).upper()
-        if not c_int or not c_ext: return "OK"
-        if "SOTREMA2" in act:
-            if "GPSEO" not in c_int: return "OK"
-        if c_int in ["GPSEO", "CCPIF"] and "CU GRAND PARIS SEINE ET OISE" in c_ext: return "OK"
-        if "CU GRAND PARIS SEINE ET OISE" in c_ext and c_int in ["GPSEO", "CCPIF"]: return "OK"
-        if c_int in c_ext or c_ext in c_int: return "OK"
-        return "Pb.Clt"
-    merged['Verif_Client'] = merged.apply(verif_client, axis=1)
-    if 'Date' in merged.columns: merged = merged.drop(columns=['Date'])
-    merged = merged.rename(columns={'Date_Ref': 'Date'}); cols_final = ['Date', 'Exutoire', 'Client', 'INT Client', 'EXT Client', 'Activité', 'Num Ticket', 'Num Bon', 'Chauffeur', 'Immatriculation', 'EXT_Matiere', 'Matiere_T', 'Verif_Tonnes', 'Verif_Matiere', 'Verif_Exutoire', 'Verif_Client', 'Poids_Terrain', 'Poids_Facture', 'Ecart']
-    for c in cols_final:
-        if c not in merged.columns: merged[c] = ""
-    if 'Num Bon' in merged.columns: merged['Num Bon'] = merged['Num Bon'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
-    return merged[cols_final]
+# Additional modularization cleanup
 
 
-from modules.verif_suez import charger_suez_terrain
 # (charger_suez_terrain moved to modules/verif_suez.py)
 
-from modules.verif_suez import process_suez
 # Suez logic moved to modules/verif_suez.py
 
 
@@ -1214,7 +613,7 @@ def display_results(df):
 
     def highlight_method(row):
         m = str(row.get('Methode', ''))
-        if 'Auto' in m or 'Smart' in m: return ['background-color: #d4edda; color: #155724'] * len(row)
+        if 'Auto' in m or 'Intelligent' in m: return ['background-color: #d4edda; color: #155724'] * len(row)
         elif 'Ticket' in m: return [''] * len(row)
         else: return ['background-color: #f8d7da; color: #721c24'] * len(row)
 
@@ -1244,276 +643,12 @@ from modules.verif_azalys import charger_valoseine_enc, process_valoseine_enc
 
 
 
-def charger_vert_compost_smirtom(file_path):
-    try:
-        # Based on inspection: data starts around line 12. No standard header.
-        # Col 2: Ticket (idx 2)
-        # Col 4: Immat (idx 4)
-        # Col 5: Transporteur (idx 5)
-        # Col 7: Site/Client (idx 7)
-        # Col 9: Poids (idx 9) - seems to be in kg (e.g. 2720)
-        
-        df = pd.read_excel(file_path, header=None)
-        data = []
-        
-        for i, row in df.iterrows():
-            if len(row) > 9:
-                # Based on debug_columns.py:
-                # Col 0: Date
-                # Col 1: SMIRTOM DU VEXIN
-                # Col 2: DECHETTERIE MARINES (Client)
-                # Col 3: Chauffeur
-                # Col 4: Immat
-                # Col 5: Num Bon
-                # Col 6: Ticket (e.g. 1146096)
-                # Col 7: VERT COMPOST
-                # Col 8: Matiere
-                # Col 9: Poids (Tonnes, e.g. 3.3)
-
-                ticket_val = str(row[6]).strip()
-                
-                # Check if it looks like a ticket (numeric, length > 4)
-                if ticket_val.isdigit() and len(ticket_val) > 4:
-                    r_date = row[0]
-                    
-                    data.append({
 from modules.verif_vert_compost_smirtom import charger_vert_compost_smirtom, process_vert_compost_smirtom
 # SMIRTOM Vert/Compost logic moved to modules/verif_vert_compost_smirtom.py
 
 
 
-def charger_satel_smirtom_enc(file_path):
-    try:
-        # Based on inspection: No header. Data starts row 0.
-        # Col 0: Date (2026-01-02)
-        # Col 1: Chauffeur (AOUATE)
-        # Col 2: Immat (FG-254-YJ)
-        # Col 3: Ticket (01261546)
-        # Col 4: Matiere (Encombrants)
-        # Col 5: Transporteur (SATEL...)
-        # Col 6: Client (DECHETTERIE MAGNY...)
-        # Col 8: Poids (3.9) -> Seems to be Tonnes (Invoice matches 3.9)
-        
-        df = pd.read_excel(file_path, header=None)
-        data = []
-        
-        for i, row in df.iterrows():
-            # Check for valid date/weight row
-            if len(row) > 8:
-                # Basic validation: Col 8 should be numeric
-                try:
-                    p = float(row[8])
-                except:
-                    continue # Skip invalid rows
-                
-                r_date = row[0]
-                
-                data.append({
-                    "Date_Ref": r_date,
-                    "Num Ticket": str(row[3]).strip(),
-                    "Poids_Terrain": p, # Tonnes
-                    "Client": str(row[6]).strip() if len(row) > 6 else "",
-                    "Immat": str(row[2]).strip() if len(row) > 2 else "",
-                    "Chauffeur": str(row[1]).strip() if len(row) > 1 else "",
-                    "Matiere_T": str(row[4]).strip() if len(row) > 4 else "",
-                    "Transporteur": str(row[5]).strip() if len(row) > 5 else ""
-                })
-                    
-        new_df = pd.DataFrame(data)
-        
-        # Unit conversion: Already Tonnes.
-        if "Poids_Terrain" in new_df.columns:
-            new_df["Poids_Terrain"] = pd.to_numeric(new_df["Poids_Terrain"], errors='coerce')
-            
-        if 'Date_Ref' in new_df.columns:
-             new_df['Date_Ref'] = pd.to_datetime(new_df['Date_Ref'], errors='coerce').dt.date
-             
-        new_df['Activité'] = "ENCOMBRANTS"
-        
-        return new_df
-    except Exception as e:
-        logger.error(f"Erreur chargement SATEL SMIRTOM ENC: {e}")
-        return pd.DataFrame()
-
-
-def process_satel_smirtom_enc(f_ter, f_fac):
-    logger.info("Début traitement SATEL SMIRTOM ENC")
-    
-    # 1. Load Terrain
-    df_ter = charger_satel_smirtom_enc(f_ter)
-    if df_ter.empty: return pd.DataFrame()
-    
-    # 2. Load Invoice
-    # Robust header detection
-    df_ref_raw = pd.read_excel(f_fac, header=None, dtype=str)
-    
-    header_row_idx = None
-    for i, row in df_ref_raw.iterrows():
-        r_str = row.astype(str).str.lower().tolist()
-        if any("num bon" in s for s in r_str) and any("nomclient" in s for s in r_str):
-            header_row_idx = i
-            break
-            
-    if header_row_idx is not None:
-        # Reload or slice
-        df_ref = df_ref_raw.iloc[header_row_idx+1:].copy()
-        df_ref.columns = df_ref_raw.iloc[header_row_idx]
-        df_ref.columns = df_ref.columns.astype(str) # Force string headers
-        
-        # Dedup columns (e.g. Code, Code)
-        new_cols = []
-        seen = {}
-        for c in df_ref.columns:
-            c_str = str(c).strip()
-            if c_str in seen:
-                seen[c_str] += 1
-                new_cols.append(f"{c_str}.{seen[c_str]}")
-            else:
-                seen[c_str] = 0
-                new_cols.append(c_str)
-        df_ref.columns = new_cols
-
-    else:
-        # Fallback or error
-        logger.warning("Header not found for SATEL Invoice, using default/heuristic?")
-        df_ref = df_ref_raw # Likely fail later but better than crash here
-    
-    cols_ref = {}
-    for c in df_ref.columns:
-        cl = str(c).lower().strip()
-        if "num bon" in cl: cols_ref[c] = "Num Ticket" # Sotrema ID
-        if "quantiteligne" in cl: cols_ref[c] = "Poids_Facture"
-        if "immatriculation" in cl: cols_ref[c] = "Immat"
-        if "date" in cl: cols_ref[c] = "Date_Ref"
-        if "nomclient" in cl: cols_ref[c] = "EXT Client"
-        
-        # Mapping Description to EXT_Matiere
-        # Ignore Code/Code.1 to avoid duplicates (Use Description for Matiere)
-        if "description" in cl: cols_ref[c] = "EXT_Matiere"
-
-    df_ref = df_ref.rename(columns=cols_ref)
-    
-    # Weigh conversion: Invoice is likely Tonnes (matches 3.9)
-    if "Poids_Facture" in df_ref.columns:
-        df_ref["Poids_Facture"] = pd.to_numeric(df_ref["Poids_Facture"], errors='coerce')
-        
-    if 'Date_Ref' in df_ref.columns:
-         df_ref['Date_Ref'] = pd.to_datetime(df_ref['Date_Ref'], errors='coerce').dt.date
-
-    # Cleaning keys
-    if 'Num Ticket' in df_ter.columns:
-        df_ter['Num Ticket'] = df_ter['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
-    if 'Num Ticket' in df_ref.columns:
-        df_ref['Num Ticket'] = df_ref['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
-        # Filter empty
-        df_ref = df_ref[df_ref['Num Ticket'] != '']
-
-    # --- MATCHING Logic ---
-    # Ticket numbers map: SATEL (e.g. 01261546) vs SOTREMA (e.g. 01260290)
-    # They look different. But let's try exact match first just in case.
-    
-    df_ter['K'] = df_ter['Num Ticket'].astype(str).str.strip().str.upper().replace(['NAN', '', 'NONE'], np.nan)
-    df_ref['K'] = df_ref['Num Ticket'].astype(str).str.strip().str.upper().replace(['NAN', '', 'NONE'], np.nan)
-
-    m1 = pd.merge(df_ter.dropna(subset=['K']), df_ref.dropna(subset=['K']), on='K', how='outer', indicator=True, suffixes=('_T', '_F'))
-    
-    match1 = m1[m1['_merge'] == 'both'].copy()
-    match1['Methode'] = '1. Ticket Exact'
-    
-    ids_t = match1['K'].unique()
-    ids_f = match1['K'].unique()
-    
-    l_ter = df_ter[~df_ter['K'].isin(ids_t)].copy()
-    l_ref = df_ref[~df_ref['K'].isin(ids_f)].copy()
-    
-    # 2. Smart Match (Date + Weight)
-    match2 = pd.DataFrame()
-    if not l_ter.empty and not l_ref.empty:
-        l_ter['Key_Date'] = l_ter['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN")
-        l_ref['Key_Date'] = l_ref['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN")
-        
-        m_cross = pd.merge(l_ter, l_ref, on='Key_Date', how='inner', suffixes=('_T', '_F'))
-        if not m_cross.empty:
-            p_t = pd.to_numeric(m_cross['Poids_Terrain'], errors='coerce').fillna(0)
-            p_f = pd.to_numeric(m_cross['Poids_Facture'], errors='coerce').fillna(0)
-            m_cross['Delta'] = (p_t - p_f).abs()
-            
-            # Tolerance 0.05 T
-            cands = m_cross[m_cross['Delta'] <= 0.05].sort_values('Delta')
-            if not cands.empty:
-                 match2 = cands.drop_duplicates(subset=['Num Ticket_F'], keep='first')
-                 match2['Methode'] = '2. Smart Match'
-                 match2['_merge'] = 'both'
-                 
-                 matched_tickets_f = match2['Num Ticket_F'].tolist()
-                 # Cleanup
-                 l_ref = l_ref[~l_ref['Num Ticket'].isin(matched_tickets_f)]
-                 
-                 match2['UID_T'] = match2['Key_Date'] + "_" + match2['Poids_Terrain'].astype(str)
-                 l_ter['UID_T'] = l_ter['Key_Date'] + "_" + l_ter['Poids_Terrain'].astype(str)
-                 uids = match2['UID_T'].unique()
-                 l_ter = l_ter[~l_ter['UID_T'].isin(uids)].drop(columns=['UID_T'])
-                 match2 = match2.drop(columns=['UID_T'])
-
-    # Final Concat
-    cols_t = df_ter.columns
-    cols_f = df_ref.columns
-    
-    orph_t = l_ter.rename(columns={c: c + '_T' for c in cols_t})
-    orph_t['_merge'] = 'left_only'; orph_t['Methode'] = 'Non Trouvé'
-    
-    orph_f = l_ref.rename(columns={c: c + '_F' for c in cols_f})
-    orph_f['_merge'] = 'right_only'; orph_f['Methode'] = 'Non Trouvé'
-    
-    final = pd.concat([match1, match2, orph_t, orph_f], ignore_index=True)
-    
-    # Consolidation
-    if 'Num Ticket_F' in final.columns:
-        final['Num Ticket'] = final['Num Ticket_F'].fillna(final.get('Num Ticket_T')).fillna('').astype(str)
-    else:
-        final['Num Ticket'] = resolve_col(final, 'Num Ticket').fillna('').astype(str)
-
-    final['Date_Ref'] = resolve_col(final, 'Date_Ref').apply(convertir_date_robuste)
-    
-    p_tt = pd.to_numeric(final.get('Poids_Terrain_T', 0), errors='coerce').fillna(0)
-    final['Poids_Terrain'] = pd.to_numeric(final.get('Poids_Terrain', 0), errors='coerce').fillna(0)
-    final['Poids_Terrain'] = np.where(final['Poids_Terrain'] > 0, final['Poids_Terrain'], p_tt)
-    
-    p_ff = pd.to_numeric(final.get('Poids_Facture_F', 0), errors='coerce').fillna(0)
-    final['Poids_Facture'] = pd.to_numeric(final.get('Poids_Facture', 0), errors='coerce').fillna(0)
-    final['Poids_Facture'] = np.where(final['Poids_Facture'] > 0, final['Poids_Facture'], p_ff)
-
-    # Consolidation
-    # INT Client from Terrain 'Client'
-    c_int = final.get('Client', pd.Series([np.nan]*len(final)))
-    c_int_t = final.get('Client_T', pd.Series([np.nan]*len(final)))
-    final['INT Client'] = c_int.fillna(c_int_t).astype(str).replace('nan', '')
-
-    # EXT Client from Invoice 'EXT Client'
-    c_ext = final.get('EXT Client', pd.Series([np.nan]*len(final)))
-    c_ext_f = final.get('EXT Client_F', pd.Series([np.nan]*len(final)))
-    final['EXT Client'] = c_ext.fillna(c_ext_f).astype(str).replace('nan', '')
-
-    final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']
-    
-    # Coalesce Immat
-    c_im = final.get('Immat', pd.Series([np.nan]*len(final)))
-    c_im_t = final.get('Immat_T', pd.Series([np.nan]*len(final)))
-    c_im_f = final.get('Immat_F', pd.Series([np.nan]*len(final)))
-    final['Immat'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace('nan', '')
-    
-    final['Chauffeur'] = final.get('Chauffeur_T', '').astype(str).replace('nan', '')
-    
-    final['Activité'] = "ENCOMBRANTS"
-    final['Exutoire'] = "SATEL SMIRTOM ENC"
-    
-    # Verifications
-    final['Verif_Exutoire'] = np.where(final['_merge'] == 'both', 'OK', 'Pb.Ext')
-    final['Verif_Tonnes'] = (abs(final['Ecart']) < 0.05).replace({True:'OK', False:'Pb.T'})
-    final['Verif_Matiere'] = "OK"
-    final['Verif_Client'] = "OK" 
-
-    return final
+# Logic for SATEL SMIRTOM ENC moved to modules/verif_satel.py
 
 
 def interface_admin():
@@ -1621,13 +756,13 @@ def interface_admin():
     with st.expander("Archivage par Critères (Exutoire / Période)"):
         c_exu_del, c_dates_del = st.columns(2)
         
-        exu_del = c_exu_del.selectbox("Exutoire concerné", ["Selectionner..."] + ["DUPILLE", "PICHETA GPSEO", "VALENE", "SUEZ"])
+        exu_del = c_exu_del.selectbox("Exutoire concerné", ["Sélectionner..."] + ["DUPILLE", "PICHETA GPSEO", "VALENE", "SUEZ"])
         dates_del = c_dates_del.date_input("Période cible", [])
         
-        motif_del = st.text_input("Motif de l'opération", "Nettoyage périodique")
+        motif_del = st.text_input("Motif de l'opération", "")
         
         if st.button("Exécuter l'archivage", type="primary"):
-            if exu_del == "Selectionner..." or len(dates_del) != 2:
+            if exu_del == "Sélectionner..." or len(dates_del) != 2:
                 st.error("Veuillez sélectionner un exutoire et une période valide (Début - Fin).")
             else:
                 d_start, d_end = dates_del
@@ -2283,7 +1418,7 @@ else:
         st.divider()
     
         if provider == "DUPILLE":
-            st.title("Import DUPILLE")
+            st.title("Import Dupille")
             c1, c2 = st.columns(2)
             f_lb = c1.file_uploader("Fichier Terrain", type=['xlsx', 'xls', 'xlsm'])
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xlsm'])
@@ -2341,7 +1476,7 @@ else:
             f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'])
             
             if f_ter and f_fac:
-                if st.button("Lancer Picheta Valoseine"):
+                if st.button("Lancer"):
                     final = process_valoseine(f_ter, f_fac)
                     st.session_state['df_valoseine'] = final
             
@@ -2412,7 +1547,7 @@ else:
             f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="as_t")
             f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="as_f")
             
-            if st.button("Lancer Azalys Sotrema"):
+            if st.button("Lancer"):
                 if f_ter and f_fac:
                     final = process_azalys(f_ter, f_fac, "AZALYS SOTREMA")
                     st.session_state['df_azalys_sotrema'] = final
@@ -2430,7 +1565,7 @@ else:
             f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="av_t")
             f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="av_f")
             
-            if st.button("Lancer Azalys Valoseine"):
+            if st.button("Lancer"):
                 if f_ter and f_fac:
                     final = process_azalys(f_ter, f_fac, "AZALYS VALOSEINE")
                     st.session_state['df_azalys_valoseine'] = final
@@ -2450,7 +1585,7 @@ else:
             f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="ve_t")
             f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="ve_f")
             
-            if st.button("Lancer Valoseine ENC"):
+            if st.button("Lancer"):
                 if f_ter and f_fac:
                     final = process_valoseine_enc(f_ter, f_fac)
                     st.session_state['df_valoseine_enc'] = final
@@ -2468,7 +1603,7 @@ else:
             f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="vcs_t")
             f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="vcs_f")
             
-            if st.button("Lancer Vert Compost"):
+            if st.button("Lancer"):
                 if f_ter and f_fac:
                     final = process_vert_compost_smirtom(f_ter, f_fac)
                     st.session_state['df_vert_compost'] = final
@@ -2486,7 +1621,7 @@ else:
             f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="sse_t")
             f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="sse_f")
             
-            if st.button("Lancer SATEL SMIRTOM ENC"):
+            if st.button("Lancer"):
                 if f_ter and f_fac:
                     final = process_satel_smirtom_enc(f_ter, f_fac)
                     st.session_state['df_satel_smirtom_enc'] = final

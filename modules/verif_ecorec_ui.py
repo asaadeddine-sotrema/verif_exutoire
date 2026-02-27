@@ -16,14 +16,14 @@ def show_verif_ecorec_ui():
     with c1:
         st.subheader("Fichier Ecorec")
         st.caption("Fichier contenant les données Ecorec brutes (.xls)")
-        f_ecorec = st.file_uploader("Upload Ecorec", type=['xls', 'xlsx'], key="eco_u")
+        f_ecorec = st.file_uploader("Charger Ecorec", type=['xls', 'xlsx'], key="eco_u")
         
     with c2:
         st.subheader("Fichier Contrôlé (Exploitation)")
         st.caption("Fichier mensuel contenant les tonnages contrôlés (.xlsx)")
-        f_controle = st.file_uploader("Upload Contrôlé", type=['xls', 'xlsx'], key="ctrl_u")
+        f_controle = st.file_uploader("Charger Contrôlé", type=['xls', 'xlsx'], key="ctrl_u")
 
-    if st.button("🚀 Lancer la Vérification", type="primary", use_container_width=True):
+    if st.button("Lancer", type="primary", use_container_width=True):
         if not f_ecorec or not f_controle:
             st.error("Veuillez importer les deux fichiers avant de lancer l'analyse.")
         else:

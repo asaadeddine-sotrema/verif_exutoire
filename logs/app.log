@@ -668,3 +668,11 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-02-26 10:55:25 - INFO - [admin] - Charge Suez DECH: 186 lignes
 2026-02-26 11:12:52 - INFO - [System] - Connexion réussie: admin
 2026-02-26 11:19:59 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 16:40:17,844 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 16:40:57,355 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-02-26 16:40:57 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-02-26 16:41:05 - INFO - [System] - Connexion réussie: admin
+2026-02-26 16:46:33 - INFO - [System] - Connexion réussie: admin
+2026-02-27 08:51:17 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-02-27 08:51:31 - INFO - [System] - Connexion réussie: admin
+2026-02-27 16:02:30 - INFO - [System] - Connexion réussie: admin

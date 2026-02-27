@@ -150,7 +150,7 @@ def process_picheta(f_ctc, f_dech, f_exp):
             else:
                 match2 = candidates.drop_duplicates(subset=['Key_Date', 'Poids_Terrain'], keep='first')
             if not match2.empty:
-                match2['Methode'] = '2. Smart Match'; match2['_merge'] = 'both'
+                match2['Methode'] = '2. Rapprochement Intelligent'; match2['_merge'] = 'both'
                 if 'Num Ticket_F' in match2.columns: match2['Num Ticket'] = match2['Num Ticket_F']
                 matched_tickets_fac = match2['Num Ticket_F'].tolist() if 'Num Ticket_F' in match2.columns else []
                 match2['_UID_EXCL'] = match2['Key_Date'].astype(str) + "_" + match2['Poids_Terrain'].astype(str)
@@ -314,7 +314,7 @@ def process_picheta_smirtom(f_ter, f_fac):
             p_t = pd.to_numeric(m_cross['Poids_Terrain'], errors='coerce').fillna(0); p_f = pd.to_numeric(m_cross['Poids_Facture'], errors='coerce').fillna(0)
             m_cross['Delta'] = (p_t - p_f).abs(); cands = m_cross[m_cross['Delta'] <= 0.05].sort_values('Delta')
             if not cands.empty:
-                 match2 = cands.drop_duplicates(subset=['Num Ticket_F'], keep='first'); match2['Methode'] = '2. Smart Match'; match2['_merge'] = 'both'
+                 match2 = cands.drop_duplicates(subset=['Num Ticket_F'], keep='first'); match2['Methode'] = '2. Rapprochement Intelligent'; match2['_merge'] = 'both'
                  matched_tickets_f = match2['Num Ticket_F'].tolist(); match2['UID_T'] = match2['Key_Date'] + "_" + match2['Poids_Terrain'].astype(str) + "_" + match2['Num Ticket_T'].astype(str)
                  l_ter['UID_T'] = l_ter['Key_Date'] + "_" + l_ter['Poids_Terrain'].astype(str) + "_" + l_ter['Num Ticket'].astype(str)
                  uids_done = match2['UID_T'].unique(); final_t = l_ter[~l_ter['UID_T'].isin(uids_done)].drop(columns=['UID_T'])
@@ -434,7 +434,7 @@ def process_picheta_inoe(f_ctc, f_dech, f_inv):
             p_t = pd.to_numeric(m_cross['Poids_Terrain'], errors='coerce').fillna(0); p_f = pd.to_numeric(m_cross['Poids_Facture'], errors='coerce').fillna(0)
             m_cross['Delta'] = (p_t - p_f).abs(); cands = m_cross[m_cross['Delta'] <= 0.05].sort_values('Delta')
             if not cands.empty:
-                 match2 = cands.drop_duplicates(subset=['Num Ticket_F'], keep='first'); match2['Methode'] = '2. Smart Match'; match2['_merge'] = 'both'
+                 match2 = cands.drop_duplicates(subset=['Num Ticket_F'], keep='first'); match2['Methode'] = '2. Rapprochement Intelligent'; match2['_merge'] = 'both'
                  matched_tickets_f = match2['Num Ticket_F'].tolist(); match2['UID_T'] = match2['Key_Date'] + "_" + match2['Poids_Terrain'].astype(str) + "_" + match2['Num Ticket_T'].astype(str)
                  l_ter['UID_T'] = l_ter['Key_Date'] + "_" + l_ter['Poids_Terrain'].astype(str) + "_" + l_ter['Num Ticket'].astype(str)
                  uids_done = match2['UID_T'].unique(); final_t = l_ter[~l_ter['UID_T'].isin(uids_done)].drop(columns=['UID_T'])
