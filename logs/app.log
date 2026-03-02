@@ -676,3 +676,7 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-02-27 08:51:17 - WARNING - [System] - Echec connexion pour utilisateur: admin
 2026-02-27 08:51:31 - INFO - [System] - Connexion réussie: admin
 2026-02-27 16:02:30 - INFO - [System] - Connexion réussie: admin
+2026-03-02 09:12:29 - INFO - [System] - Connexion réussie: admin
+2026-03-02 11:08:41 - ERROR - [System] - Erreur d'importation de verif_heures_ui : expected an indented block after 'elif' statement on line 878 (verif_heures_ui.py, line 879)
+2026-03-02 11:08:41 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : expected an indented block after 'elif' statement on line 878 (verif_heures_ui.py, line 879)
+2026-03-02 11:08:41 - ERROR - [admin] - Erreur d'importation de verif_heures_ui : expected an indented block after 'elif' statement on line 878 (verif_heures_ui.py, line 879)

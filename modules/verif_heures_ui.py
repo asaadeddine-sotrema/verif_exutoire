@@ -613,14 +613,22 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
                                 def parse_tps_travail(val):
                                     if pd.isna(val) or val == "": return 0.0
                                     if isinstance(val, (int, float)): return float(val)
+                                    if hasattr(val, 'components'): # pd.Timedelta
+                                        return val.components.hours + val.components.minutes / 60.0 + (val.components.days * 24.0)
+                                    if isinstance(val, datetime): return val.hour + val.minute / 60.0
                                     if isinstance(val, time): return val.hour + val.minute / 60.0
                                     if isinstance(val, str):
+                                        val_str = val.strip().replace(',', '.')
                                         try:
-                                            t = datetime.strptime(val, "%H:%M:%S").time()
+                                            return float(val_str)
+                                        except ValueError:
+                                            pass
+                                        try:
+                                            t = datetime.strptime(val.strip(), "%H:%M:%S").time()
                                             return t.hour + t.minute / 60.0
                                         except ValueError:
                                             try:
-                                                t = datetime.strptime(val, "%H:%M").time()
+                                                t = datetime.strptime(val.strip(), "%H:%M").time()
                                                 return t.hour + t.minute / 60.0
                                             except ValueError:
                                                 pass
@@ -797,9 +805,8 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
 
         st.markdown("---")
         
-        tab_anomalies, tab_presences = st.tabs(["⚠️ Anomalies Planning", "🔍 Recherche Présents"])
-
-        with tab_anomalies:
+        # ⚠️ Anomalies Planning
+        if True:
             # 2. Affichage des anomalies (HISTORIQUE + SESSION)
             st.markdown("### Absents du Relevé")
             
@@ -875,121 +882,6 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
             else:
                  st.success("✅ Aucune anomalie planning détectée sur cette période.")
 
-        with tab_presences:
-            try:
-                query = f"""
-                    SELECT "Date", "Employé", "Code", "Heures", "Semaine"
-                    FROM {TABLE_PRESENCES_DAILY}
-                    WHERE "Date" >= :start AND "Date" <= :end
-                    AND "Code" = 'P'
-                    ORDER BY "Date" ASC, "Employé" ASC
-                """
-                with engine.connect() as conn:
-                    df_presences = pd.read_sql(text(query), conn, params={"start": date_start, "end": date_end})
-                    df_presences['Date'] = pd.to_datetime(df_presences['Date']).dt.date
-                
-                if df_presences.empty:
-                    st.info(f"Aucun présent enregistré entre le {date_start} et le {date_end}.")
-                else:
-                    st.success(f"{len(df_presences)} jours de présence identifiés.")
-
-                    # --- TABLEAU DE DETAILS INTERACTIF ---
-                    st.markdown("#### 📋 Détail interactif par Collaborateur")
-                    st.info("💡 Cliquez sur un nom ou utilisez la recherche pour détailler ses pointages.")
-                    
-                    df_daily = load_daily_data(engine, date_start, date_end)
-                    search_list = sorted(df_presences['Employé'].unique().tolist())
-                    
-                    if "search_employe_suivi" not in st.session_state:
-                         st.session_state["search_employe_suivi"] = ""
-
-                    def clear_search_suivi():
-                        st.session_state["search_employe_suivi"] = ""
-
-                    col_search, col_clear = st.columns([5, 1])
-                    with col_search:
-                         search_term = st.selectbox("🔍 Rechercher un employé", [""] + search_list, key="search_employe_suivi", placeholder="Tapez un nom...")
-                    with col_clear:
-                         st.write("") 
-                         st.write("") 
-                         st.button("❌", on_click=clear_search_suivi, help="Effacer la recherche", key="btn_clear_suivi")
-                    
-                    nom_employe = search_term
-                    
-                    if nom_employe:
-                        st.markdown(f"##### 🔎 Détail pour : **{nom_employe}**")
-                        
-                        if not df_daily.empty:
-                            df_user_daily = df_daily[df_daily['Employé'] == nom_employe].copy()
-                            if not df_user_daily.empty:
-                                df_user_daily['Date_Obj'] = pd.to_datetime(df_user_daily['Date'])
-                                df_user_daily = df_user_daily.sort_values('Date_Obj')
-                                
-                                jours_fr = {0: 'Lundi', 1: 'Mardi', 2: 'Mercredi', 3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
-                                def format_jour(d):
-                                    return f"{jours_fr.get(d.weekday(), '')} {d.strftime('%d/%m/%Y')}"
-                                
-                                df_user_daily['Jour'] = df_user_daily['Date_Obj'].apply(format_jour)
-                                
-                                # Nettoyage Time
-                                for c in ['Heure_Debut', 'Heure_Fin_Pause', 'Heure_Debut_Pause', 'Heure_Fin']:
-                                    if c not in df_user_daily.columns:
-                                        df_user_daily[c] = ""
-                                    else:
-                                        def clean_time_display(val):
-                                            s = str(val)
-                                            if not s or s == "nan" or s == "NaT": return ""
-                                            if "days" in s:
-                                                parts = s.split('days')
-                                                if len(parts) > 1: s = parts[-1].strip()
-                                            if ' ' in s:
-                                                try: return pd.to_datetime(s).strftime('%H:%M:%S')
-                                                except: pass
-                                            return s
-                                        df_user_daily[c] = df_user_daily[c].apply(clean_time_display)
-                                
-                                cols_to_show = ['Jour', 'Semaine', 'Code', 'Heure_Debut', 'Heure_Debut_Pause', 'Heure_Fin_Pause', 'Heure_Fin', 'Heures']
-                                df_show = df_user_daily[cols_to_show].reset_index(drop=True)
-                                
-                                def highlight_rows(row):
-                                    return ['background-color: rgba(128, 128, 128, 0.1)' if row.name % 2 != 0 else '' for _ in row]
-
-                                st.dataframe(
-                                    df_show.style.format({'Heures': '{:.2f}'}).apply(highlight_rows, axis=1),
-                                    use_container_width=True
-                                )
-                            else:
-                                st.warning(f"Aucun détail d'heures trouvé pour {nom_employe} sur cette période.")
-                    
-                    st.markdown("---")
-                    st.markdown(f"##### 📋 Liste complète détaillée")
-                    st.dataframe(style_zebra(df_presences[['Date', 'Employé', 'Heures', 'Semaine']].style), use_container_width=True)
-                            
-                # --- EXPORT EXCEL ---
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_presences.to_excel(writer, index=False, sheet_name='Presences')
-                    if not df_final_display.empty:
-                        df_final_display.drop(columns=['Date_Only', 'Date_Obj', 'Statut', 'Nom (Planning)'], errors='ignore').to_excel(writer, index=False, sheet_name='Absents Planning')
-
-                output.seek(0)
-                st.download_button(
-                    label="📥 Exporter le listing complet (Excel)",
-                    data=output.getvalue(),
-                    file_name=f"Listing_Terrain_{date_start}_{date_end}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    key="btn_dl_suivi_vfinal_fixed"
-                )
-
-                st.markdown("##### 👤 Récapitulatif par Collaborateur")
-                if not df_presences.empty:
-                    df_recap = df_presences.groupby('Employé').size().reset_index(name='Jours Présents')
-                    st.dataframe(style_zebra(df_recap.sort_values('Jours Présents', ascending=False).style), use_container_width=True)
-
-
-            except Exception as e:
-                st.error(f"Erreur lors du chargement des suivis : {e}")
-
     elif mode == "📈 Statistiques":
         if not engine:
             st.error("Base de donnée non connectée.")
@@ -1038,6 +930,7 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
         st.sidebar.markdown("### 🔍 Paramétrage de l'Analyse")
         noise_min_days = st.sidebar.slider("Seuil de Présence (Jours min.)", 1, 7, 2, help="Exclut les collaborateurs dont la base de données est insuffisante sur la période.")
         noise_hour_range = st.sidebar.slider("Amplitude Horaire Cible", 0, 80, (15, 60), help="Filtre les extrêmes pour se concentrer sur le cœur de l'effectif.")
+        threshold_overtime = st.sidebar.slider("Seuil d'Alerte Quotidien (h)", 0.0, 24.0, 10.0, 0.5, help="Met en surbrillance rouge les jours dépassant ce volume horaire dans le détail.")
         
         # Apply Filters to Weekly History
         df_filtered = df_history.copy()
@@ -1217,8 +1110,10 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
                          st.write("") 
                          st.button("❌", on_click=clear_search, help="Effacer la recherche")
                     
+                    nom_employe = None
                     if search_term:
                         df_display_stats = df_display_stats[df_display_stats['Employé'] == search_term]
+                        nom_employe = search_term
                     
                     event = st.dataframe(
                         df_display_stats.style.format({
@@ -1234,20 +1129,13 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
                         selection_mode="single-row"
                     )
                     
-                    # GESTION DU CLIC
-                    if event and event.selection and event.selection.rows:
+                    # GESTION DU CLIC OU RECHERCHE DIRECTE
+                    if not nom_employe and event and event.selection and event.selection.rows:
                         selected_index = event.selection.rows[0]
-                        # Attention, st.dataframe trie peut-être différemment.
-                        # Mais df_stats est notre source. Si le user a trié dans l'UI, ça peut décaler.
-                        # Heureusement st.dataframe retourne l'index du DF d'origine si on ne fait pas gaffe ? 
-                        # Non, selection.rows donne l'index de ligne affichée.
-                        # Le plus sûr est de récupérer l'employé via iloc sur le DF passé au st.dataframe
-                        # MAIS st.dataframe peut avoir été trié par l'utilisateur...
-                        # Limitation Streamlit : selection.rows retourne les indices de ligne DU DATAFRAME ORIGINAL
-                        
                         selected_row = df_display_stats.iloc[selected_index]
                         nom_employe = selected_row['Employé']
                         
+                    if nom_employe:
                         st.markdown(f"##### 🔎 Détail pour : **{nom_employe}**")
                         
                         # Filtrage des données quotidiennes
@@ -1299,8 +1187,19 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
                                 df_show = df_user_daily[cols_to_show].reset_index(drop=True)
                                 
                                 def highlight_rows(row):
-                                    # Gris transparent pour compatibilité Light/Dark mode
-                                    return ['background-color: rgba(128, 128, 128, 0.1)' if row.name % 2 != 0 else '' for _ in row]
+                                    styles = []
+                                    try:
+                                        heures_val = float(row['Heures'])
+                                        is_overtime = heures_val >= threshold_overtime
+                                    except:
+                                        is_overtime = False
+                                        
+                                    for _ in range(len(row)):
+                                        if is_overtime:
+                                            styles.append('background-color: rgba(255, 99, 71, 0.3); color: white;')
+                                        else:
+                                            styles.append('background-color: rgba(128, 128, 128, 0.1)' if row.name % 2 != 0 else '')
+                                    return styles
 
                                 st.dataframe(
                                     df_show.style

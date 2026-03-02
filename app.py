@@ -425,6 +425,9 @@ from modules.verif_azalys import charger_azalys, process_azalys, charger_valosei
 from modules.verif_vert_compost_smirtom import charger_vert_compost_smirtom, process_vert_compost_smirtom
 from modules.verif_dupille import charger_dupille, charger_dupille_facture, process_dupille
 from modules.verif_satel import charger_satel_smirtom_enc, process_satel_smirtom_enc
+from modules.models_prestataires import get_prestataires_dynamiques
+from modules.admin_prestataires_ui import show_admin_prestataires_ui
+from modules.verif_generique import process_generique
 
 # =============================================================================
 # UTILITAIRES COMMUNS
@@ -1413,9 +1416,14 @@ else:
         show_verif_ecorec_ui()
         
     elif categorie == "⚖️ Vérification Tonnages":
-        # Keep the provider selection in sidebar as requested by "garde les même chose"
-        provider = st.sidebar.radio("Choisir le prestataire", sorted(["DUPILLE", "PICHETA GPSEO", "PICHETA INOE", "PICHETA SMIRTOM", "PICHETA VALOSEINE", "SUEZ", "VALENE", "AZALYS SOTREMA", "AZALYS VALOSEINE", "VALOSEINE ENC GPSEO", "VERT COMPOST SMIRTOM", "SATEL SMIRTOM ENC"]), on_change=clear_app_state)
+        # Fetch dynamic providers
+        prestataires_dynamiques = get_prestataires_dynamiques(engine)
+        noms_dynamiques = [p['nom'] for p in prestataires_dynamiques] if prestataires_dynamiques else []
+        tous_prestataires = sorted(["DUPILLE", "PICHETA GPSEO", "PICHETA INOE", "PICHETA SMIRTOM", "PICHETA VALOSEINE", "SUEZ", "VALENE", "AZALYS SOTREMA", "AZALYS VALOSEINE", "VALOSEINE ENC GPSEO", "VERT COMPOST SMIRTOM", "SATEL SMIRTOM ENC"] + noms_dynamiques)
+
+        provider = st.sidebar.radio("Choisir le prestataire", tous_prestataires, on_change=clear_app_state)
         st.divider()
+
     
         if provider == "DUPILLE":
             st.title("Import Dupille")
@@ -1472,8 +1480,8 @@ else:
         elif provider == "PICHETA VALOSEINE":
             st.title("Import PICHETA VALOSEINE")
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'])
-            f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'])
+            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'])
+            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'])
             
             if f_ter and f_fac:
                 if st.button("Lancer"):
@@ -1490,8 +1498,8 @@ else:
         elif provider == "PICHETA SMIRTOM":
             st.title("Import PICHETA SMIRTOM")
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'])
-            f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'])
+            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'])
+            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'])
             
             if st.button("Lancer") and f_ter and f_fac:
                 st.session_state['df_picheta_smirtom'] = process_picheta_smirtom(f_ter, f_fac)
@@ -1507,10 +1515,10 @@ else:
         elif provider == "PICHETA INOE":
             st.title("Import PICHETA INOE")
             c1, c2 = st.columns(2)
-            f_ctc = c1.file_uploader("Fichier CTC (XLS)", type=['xls', 'xlsx'])
-            f_dech = c2.file_uploader("Fichier Dechetterie (XLS)", type=['xls', 'xlsx'])
+            f_ctc = c1.file_uploader("Fichier CTC", type=['xls', 'xlsx'])
+            f_dech = c2.file_uploader("Fichier Dechetterie", type=['xls', 'xlsx'])
             st.divider()
-            f_inv = st.file_uploader("Fichier Facture (XLSX)", type=['xlsx'])
+            f_inv = st.file_uploader("Fichier Facture", type=['xlsx'])
             
             if st.button("Lancer", type="primary") and f_inv and (f_ctc or f_dech):
                  st.session_state['df_inoe'] = process_picheta_inoe(f_ctc, f_dech, f_inv)
@@ -1544,8 +1552,8 @@ else:
         elif provider == "AZALYS SOTREMA":
             st.title("Import AZALYS SOTREMA")
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="as_t")
-            f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="as_f")
+            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="as_t")
+            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="as_f")
             
             if st.button("Lancer"):
                 if f_ter and f_fac:
@@ -1562,8 +1570,8 @@ else:
         elif provider == "AZALYS VALOSEINE":
             st.title("Import AZALYS VALOSEINE")
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="av_t")
-            f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="av_f")
+            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="av_t")
+            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="av_f")
             
             if st.button("Lancer"):
                 if f_ter and f_fac:
@@ -1582,8 +1590,8 @@ else:
         elif provider == "VALOSEINE ENC GPSEO":
             st.title("Import VALOSEINE ENC GPSEO")
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="ve_t")
-            f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="ve_f")
+            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="ve_t")
+            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="ve_f")
             
             if st.button("Lancer"):
                 if f_ter and f_fac:
@@ -1600,8 +1608,8 @@ else:
         elif provider == "VERT COMPOST SMIRTOM":
             st.title("Import VERT COMPOST SMIRTOM")
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="vcs_t")
-            f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="vcs_f")
+            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="vcs_t")
+            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="vcs_f")
             
             if st.button("Lancer"):
                 if f_ter and f_fac:
@@ -1618,8 +1626,8 @@ else:
         elif provider == "SATEL SMIRTOM ENC":
             st.title("Import SATEL SMIRTOM ENC")
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain (XLS)", type=['xls', 'xlsx'], key="sse_t")
-            f_fac = c2.file_uploader("Fichier Facture (XLSX)", type=['xlsx', 'xls'], key="sse_f")
+            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="sse_t")
+            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="sse_f")
             
             if st.button("Lancer"):
                 if f_ter and f_fac:
@@ -1632,9 +1640,41 @@ else:
                  if st.button("💾 Enregistrer tout en Base", type="primary", key="save_sse"): 
                     save_to_db(df, engine)
                     st.success("Données enregistrées avec succès !")
+
+        elif provider in noms_dynamiques:
+            # Traitement Dynamique
+            st.title(f"Import {provider}")
+            
+            # Find provider config
+            presta_config = next((p for p in prestataires_dynamiques if p['nom'] == provider), None)
+            
+            if presta_config:
+                c1, c2 = st.columns(2)
+                f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key=f"dyn_t_{provider}")
+                f_fac = c2.file_uploader(f"Fichier Facture", type=['xlsx', 'xls'], key=f"dyn_f_{provider}")
+                
+                if st.button("Lancer", type="primary"):
+                    if f_ter and f_fac:
+                        with st.spinner(f"Traitement dynamique {provider}..."):
+                            final = process_generique(f_ter, f_fac, provider, presta_config['header_row'], presta_config)
+                            st.session_state[f'df_dyn_{provider}'] = final
+                        
+                if f'df_dyn_{provider}' in st.session_state:
+                     df = st.session_state[f'df_dyn_{provider}']
+                     display_results(df)
+                     
+                     if st.button("💾 Enregistrer tout en Base", type="primary", key=f"save_dyn_{provider}"): 
+                        save_to_db(df, engine)
+                        st.success("Données enregistrées avec succès !")
+            else:
+                st.error("Configuration du prestataire introuvable.")
     
     elif categorie in ["📥 Import des fichiers", "📅 Suivi de Présences", "📈 Statistiques"]:
         show_verif_heures_ui(engine, mode=categorie)
 
     elif categorie == "⚙️ Administration":
-        interface_admin()
+        tab_admin, tab_presta = st.tabs(["🔒 Utilisateurs", "⚙️ Modèles Prestataires"])
+        with tab_admin:
+            interface_admin()
+        with tab_presta:
+            show_admin_prestataires_ui(engine)
