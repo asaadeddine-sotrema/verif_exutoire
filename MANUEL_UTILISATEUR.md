@@ -49,6 +49,12 @@ Vous devez charger **2 fichiers** :
 1.  **Fichier Terrain** : Votre extraction interne.
 2.  **Fichier Facture** : Le fichier envoyé par le prestataire.
 
+> **💡 Nouveauté (Smart Match VALENE) :**
+> L'outil intègre désormais une réconciliation intelligente pour Valene.
+> - S'il n'y a pas de correspondance exacte sur le numéro de ticket (faute de frappe), l'outil cherche automatiquement des tickets ayant même **Date** et même **Poids** (à +/- 0.5 T).
+> - Si Valene facture deux camions sur 2 lignes différentes mais que le terrain n'a enregistré qu'une seule ligne (ou inversement), l'algorithme va additionner les tonnages de la journée pour vérifier si le compte y est. Les tickets trouvés seront automatiquement fusionnés et validés.
+> - La règle de gestion des matières est optimisée : par exemple, "DECHETS INDUSTRIELS BANALS" ou "INCINERABLE" seront automatiquement reconnus comme "ORDURES MENAGERES".
+
 #### 🔹 DUPILLE
 Vous devez charger **2 fichiers** :
 1.  **Fichier Terrain** : Doit contenir les colonnes "Num Ticket", "Date", "Poids".

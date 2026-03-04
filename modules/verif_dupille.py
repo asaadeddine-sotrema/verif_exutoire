@@ -53,6 +53,7 @@ def normaliser_matiere_dupille(val):
     if "DIB" in v or "MELANGE" in v: return "DIB"
     if "CARTON" in v: return "CARTONS"
     if "PLASTIQUE" in v: return "PLASTIQUES"
+    if "VÉGÉTAUX" in v or "VEGETAUX" in v: return "DECHETS VERTS"
     return v
 
 def normaliser_client_dupille(val):
@@ -83,7 +84,7 @@ def charger_dupille(f):
                 if "2" in cl: cols[c] = "Num Ticket 2"
                 else: cols[c] = "Num Ticket"
             if "nchantier" in cl: cols[c] = "Client"
-            if "poids" in cl and "tonnes" in cl: cols[c] = "Poids_Terrain"
+            if "poids" in cl or "tonnes" in cl: cols[c] = "Poids_Terrain"
             if "date" in cl and "jour" not in cl: cols[c] = "Date_Ref"
         df = df.rename(columns=cols)
         for txt_col in ["Num Ticket", "Num Ticket 2", "Client", "Chauffeur", "Immatriculation", "Matiere_T", "Num Bon"]:
@@ -292,10 +293,16 @@ def process_dupille(f_lb, f_fac):
     
     def check_client_dupille_strict(row):
         k_t = row.get('Key_Site_T_FINAL'); k_f = row.get('Key_Site_F_FINAL')
-        if check_site_keys({'Key_Site_T': k_t, 'Key_Site_F': k_f}): return 'OK'
-        c_ext = str(row.get('EXT Client', '')).upper()
-        if any(char.isdigit() for char in c_ext): return "OK"
         c_int = str(row.get('INT Client', '')).upper()
+        c_ext = str(row.get('EXT Client', '')).upper()
+        
+        # Explicit mismatch for Epone vs Vaucouleurs despite sharing the word "DECHETTERIE"
+        if ("EPONE" in c_int and "VAUCOULEURS" in c_ext) or ("VAUCOULEURS" in c_int and "EPONE" in c_ext):
+            return 'Pb.Clt'
+            
+        if check_site_keys({'Key_Site_T': k_t, 'Key_Site_F': k_f}): return 'OK'
+        
+        if any(char.isdigit() for char in c_ext): return "OK"
         if ("GPSEO" in c_int and "GPSO" in c_ext) or ("GPSO" in c_int and "GPSEO" in c_ext): return "OK"
         return 'Pb.Clt'
     final['Verif_Client'] = final.apply(check_client_dupille_strict, axis=1)

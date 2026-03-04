@@ -3,6 +3,7 @@ import numpy as np
 import logging
 import streamlit as st
 import re
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ DICT_CORRECTION_SUEZ = {
 
 def convertir_date_suez(val):
     if pd.isna(val) or val == "": return pd.NaT
-    if isinstance(val, (pd.Timestamp, pd.datetime, pd.Timestamp)):
+    if isinstance(val, (pd.Timestamp, datetime)):
         return val.date()
     v_str = str(val).strip()
     if re.match(r"^\d{2}/\d{2}/\d{4}", v_str):
@@ -58,19 +59,32 @@ def restore_columns(df, suffix, original_cols):
 
 def charger_suez_terrain(f, type_fichier):
     try:
-        df = pd.read_excel(f, header=0, dtype=str)
+        if hasattr(f, 'seek'):
+            f.seek(0)
+        temp = pd.read_excel(f, header=None, nrows=20, dtype=str)
+        best_idx = 0
+        for i, row in temp.iterrows():
+            r_str = row.astype(str).str.lower().tolist()
+            if "date" in r_str and ("chauffeur" in r_str or "camion" in r_str or "nature" in r_str):
+                best_idx = i
+                break
+                
+        if hasattr(f, 'seek'):
+            f.seek(0)
+        df = pd.read_excel(f, header=best_idx, dtype=str)
+        
         # Mapping colonnes CTC vs DECH
         cols_map = {}
         for c in df.columns:
             cl = str(c).lower().strip()
-            if "n° ticket" in cl: cols_map[c] = "Num Ticket"
-            if "n° bon" in cl or "numéro de bon" in cl: cols_map[c] = "Num Bon"
-            if "date ticket" in cl or "date du bon" in cl: cols_map[c] = "Date_Ref"
-            if "poids net" in cl or "poids (t)" in cl: cols_map[c] = "Poids_Terrain"
-            if "immat" in cl: cols_map[c] = "Immatriculation"
+            if "n° ticket" in cl or "num tp manuel" in cl: cols_map[c] = "Num Ticket"
+            if "n°bon" in cl or "n° bon" in cl or "numéro de bon" in cl: cols_map[c] = "Num Bon"
+            if "date ticket" in cl or "date du bon" in cl or "date" == cl: cols_map[c] = "Date_Ref"
+            if "poids" in cl and not "delta" in cl: cols_map[c] = "Poids_Terrain"
+            if "immat" in cl or "camion" in cl: cols_map[c] = "Immatriculation"
             if "chauffeur" in cl: cols_map[c] = "Chauffeur"
-            if "client" in cl or "provenance" in cl: cols_map[c] = "Client"
-            if "matière" in cl or "libellé matière" in cl: cols_map[c] = "Matiere_T"
+            if "client" in cl or "provenance" in cl or "nchantier" in cl: cols_map[c] = "Client"
+            if "matière" in cl or "libellé " in cl or "nature" in cl: cols_map[c] = "Matiere_T"
 
         df = df.rename(columns=cols_map)
         
@@ -113,13 +127,14 @@ def process_suez(f_ctc, f_dech, f_fac):
     for c in df_ref.columns:
         cl = str(c).lower().strip()
         if "nom recherche client" in cl: col_target = c
-        if "nom recherche transporteur" in cl: col_transp = c
+        if "nom du transporteur" in cl: col_transp = c
         
     if col_target:
         df_ref = df_ref[df_ref[col_target].astype(str).str.upper().str.strip() == 'GPSEOAUB']
         
     if col_transp:
-        df_ref = df_ref[df_ref[col_transp].astype(str).str.upper().str.strip() == 'K0ESOTRE']
+        val_transp = df_ref[col_transp].astype(str).str.upper().str.strip()
+        df_ref = df_ref[val_transp.str.contains('SOTREMA', na=False) | (val_transp == 'K0ESOTRE')]
     
     cols_ref = {}
     col_ext_client_found = False
@@ -201,6 +216,9 @@ def process_suez(f_ctc, f_dech, f_fac):
 
         l_ter_valid = l_ter[l_ter['Key_Date'] != "NAN"].copy()
         l_ref_valid = l_ref[l_ref['Key_Date'] != "NAN"].copy()
+        
+        l_ter_valid['_idx_T'] = l_ter_valid.index
+        l_ref_valid['_idx_F'] = l_ref_valid.index
 
         l_ter['Key_Site'] = l_ter['Client'].apply(normalize_site_key)
         l_ref['Key_Site'] = l_ref['EXT Client'].apply(normalize_site_key)
@@ -223,13 +241,7 @@ def process_suez(f_ctc, f_dech, f_fac):
             
             candidates = candidates.sort_values('Delta_Poids')
             
-            if 'Num Bon' in candidates.columns:
-                match2 = candidates.drop_duplicates(subset=['Num Bon'], keep='first')
-            else:
-                match2 = candidates.drop_duplicates(subset=['Key_Date', 'Poids_Terrain'], keep='first')
-
-            if 'Num Ticket_F' in match2.columns:
-                match2 = match2.drop_duplicates(subset=['Num Ticket_F'], keep='first')
+            match2 = candidates.drop_duplicates(subset=['_idx_F'], keep='first').drop_duplicates(subset=['_idx_T'], keep='first')
 
             if not match2.empty:
                 match2['Methode'] = '2. Rapprochement Tolérant'
@@ -238,15 +250,11 @@ def process_suez(f_ctc, f_dech, f_fac):
                 if 'Num Ticket_F' in match2.columns:
                     match2['Num Ticket'] = match2['Num Ticket_F']
 
-                matched_bons = match2['Num Bon'].tolist() if 'Num Bon' in match2.columns else []
-                matched_tickets_fac = match2['Num Ticket_F'].tolist() if 'Num Ticket_F' in match2.columns else []
+                matched_idx_t = match2['_idx_T'].unique()
+                matched_idx_f = match2['_idx_F'].unique()
 
-                final_t = l_ter[~l_ter['Num Bon'].isin(matched_bons)]
-                
-                if 'Num Ticket' in l_ref.columns:
-                    final_f = l_ref[~l_ref['Num Ticket'].isin(matched_tickets_fac)]
-                else:
-                    final_f = l_ref
+                final_t = l_ter[~l_ter.index.isin(matched_idx_t)].copy()
+                final_f = l_ref[~l_ref.index.isin(matched_idx_f)].copy()
             else:
                 final_t = l_ter
                 final_f = l_ref
@@ -259,6 +267,9 @@ def process_suez(f_ctc, f_dech, f_fac):
 
     match3 = pd.DataFrame()
     if not final_t.empty and not final_f.empty:
+         final_t['_idx_T'] = final_t.index
+         final_f['_idx_F'] = final_f.index
+         
          offset_dfs = []
          final_t['Date_Obj'] = pd.to_datetime(final_t['Date_Ref'], errors='coerce')
          final_f['Date_Obj'] = pd.to_datetime(final_f['Date_Ref'], errors='coerce')
@@ -285,10 +296,7 @@ def process_suez(f_ctc, f_dech, f_fac):
                  
                  if not candidates_3.empty:
                      candidates_3 = candidates_3.sort_values(['Delta_Days', 'Delta_Poids'])
-                     if 'Num Bon' in candidates_3.columns:
-                         match3 = candidates_3.drop_duplicates(subset=['Num Bon'], keep='first')
-                     else:
-                         match3 = candidates_3.drop_duplicates(subset=['Date_Ref_T', 'Poids_Terrain'], keep='first')
+                     match3 = candidates_3.drop_duplicates(subset=['_idx_F'], keep='first').drop_duplicates(subset=['_idx_T'], keep='first')
                      
                      if not match3.empty:
                          match3['Methode'] = '3. Rapprochement Date Flexible'
@@ -297,17 +305,11 @@ def process_suez(f_ctc, f_dech, f_fac):
                          if 'Num Ticket_F' in match3.columns:
                             match3['Num Ticket'] = match3['Num Ticket_F']
 
-                         def make_uid(df, s):
-                              return df[f'Num Ticket{s}'].astype(str) + "_" + df[f'Poids_Terrain{"" if s=="_T" else ""}'].astype(str) + "_" + df[f'Date_Ref{s}'].astype(str)
-
-                         matched_uids_t = make_uid(match3, '_T').tolist()
-                         matched_uids_f = make_uid(match3, '_F').tolist()
+                         matched_idx_t = match3['_idx_T'].unique()
+                         matched_idx_f = match3['_idx_F'].unique()
                          
-                         final_t['_UID_CLEAN'] = final_t['Num Ticket'].astype(str) + "_" + final_t['Poids_Terrain'].astype(str) + "_" + final_t['Date_Ref'].astype(str)
-                         final_f['_UID_CLEAN'] = final_f['Num Ticket'].astype(str) + "_" + final_f['Poids_Facture'].astype(str) + "_" + final_f['Date_Ref'].astype(str)
-                         
-                         final_t = final_t[~final_t['_UID_CLEAN'].isin(matched_uids_t)].drop(columns=['_UID_CLEAN'])
-                         final_f = final_f[~final_f['_UID_CLEAN'].isin(matched_uids_f)].drop(columns=['_UID_CLEAN'])
+                         final_t = final_t[~final_t.index.isin(matched_idx_t)].copy()
+                         final_f = final_f[~final_f.index.isin(matched_idx_f)].copy()
                          
                          for c in ['Date_Obj_T', 'Date_Obj_F', 'Join_Date', '_Offset', 'Delta_Days', 'Delta_Poids']:
                              if c in match3.columns: match3 = match3.drop(columns=[c])
@@ -316,7 +318,7 @@ def process_suez(f_ctc, f_dech, f_fac):
          if 'Date_Obj' in final_f.columns: final_f = final_f.drop(columns=['Date_Obj'])
 
     orph_t = final_t.rename(columns={c: c + '_T' for c in cols_ter})
-    orph_f = l_ref.rename(columns={c: c + '_F' for c in cols_ref_list})
+    orph_f = final_f.rename(columns={c: c + '_F' for c in cols_ref_list})
     
     orph_t['_merge'] = 'left_only'
     orph_t['Methode'] = 'Non Trouvé'

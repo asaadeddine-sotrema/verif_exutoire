@@ -39,32 +39,49 @@ def resolve_col(df, base_name):
 
 def charger_satel_smirtom_enc(file_path):
     try:
-        df = pd.read_excel(file_path, header=None)
-        data = []
-        for i, row in df.iterrows():
-            if len(row) > 8:
-                try: p = float(row[8])
-                except: continue
-                r_date = row[0]
-                data.append({
-                    "Date_Ref": r_date,
-                    "Num Ticket": str(row[3]).strip(),
-                    "Poids_Terrain": p,
-                    "Client": str(row[6]).strip() if len(row) > 6 else "",
-                    "Immat": str(row[2]).strip() if len(row) > 2 else "",
-                    "Chauffeur": str(row[1]).strip() if len(row) > 1 else "",
-                    "Matiere_T": str(row[4]).strip() if len(row) > 4 else "",
-                    "Transporteur": str(row[5]).strip() if len(row) > 5 else ""
-                })
-        new_df = pd.DataFrame(data)
-        if "Poids_Terrain" in new_df.columns:
-            new_df["Poids_Terrain"] = pd.to_numeric(new_df["Poids_Terrain"], errors='coerce')
-        if 'Date_Ref' in new_df.columns:
-             new_df['Date_Ref'] = pd.to_datetime(new_df['Date_Ref'], errors='coerce').dt.date
-        new_df['Activité'] = "ENCOMBRANTS"
-        return new_df
+        # Load first 20 rows to find header
+        temp = pd.read_excel(file_path, header=None, nrows=20)
+        best_idx = 0
+        for i, row in temp.iterrows():
+            r_str = row.astype(str).str.lower().tolist()
+            if "date" in r_str and ("chauffeur" in r_str or "immatriculation" in r_str):
+                best_idx = i
+                break
+                
+        if hasattr(file_path, 'seek'):
+            file_path.seek(0)
+            
+        df = pd.read_excel(file_path, header=best_idx)
+        
+        cols = {}
+        for c in df.columns:
+            cl = str(c).lower().strip()
+            if "num bon" in cl: cols[c] = "Num Bon"
+            elif "num tp manuel" in cl: cols[c] = "Num Ticket"
+            elif "tonnage" in cl or "poids" in cl: cols[c] = "Poids_Terrain"
+            elif "description" in cl or "matière" in cl or "matiere" in cl: cols[c] = "Matiere_T"
+            elif "date" in cl: cols[c] = "Date_Ref"
+            elif "nchantier" in cl or "client" in cl: cols[c] = "Client"
+            elif "immatriculation" in cl: cols[c] = "Immatriculation"
+            elif "chauffeur" in cl: cols[c] = "Chauffeur"
+            elif "exutoire" in cl or "transporteur" in cl: cols[c] = "Transporteur"
+            
+        df = df.rename(columns=cols)
+        
+        if "Poids_Terrain" in df.columns:
+            df["Poids_Terrain"] = pd.to_numeric(df["Poids_Terrain"], errors='coerce').fillna(0)
+        else:
+            df["Poids_Terrain"] = 0
+            
+        if 'Date_Ref' in df.columns:
+             df['Date_Ref'] = pd.to_datetime(df['Date_Ref'], errors='coerce').dt.date
+             
+        df = df.dropna(subset=['Date_Ref', 'Num Ticket'], how='all')
+        df['Activité'] = "ENCOMBRANTS"
+        return df
     except Exception as e:
         logger.error(f"Erreur chargement SATEL SMIRTOM ENC: {e}"); return pd.DataFrame()
+
 
 def process_satel_smirtom_enc(f_ter, f_fac):
     logger.info("Début traitement SATEL SMIRTOM ENC")
@@ -91,7 +108,7 @@ def process_satel_smirtom_enc(f_ter, f_fac):
         cl = str(c).lower().strip()
         if "num bon" in cl: cols_ref[c] = "Num Ticket"
         if "quantiteligne" in cl: cols_ref[c] = "Poids_Facture"
-        if "immatriculation" in cl: cols_ref[c] = "Immat"
+        if "immatriculation" in cl: cols_ref[c] = "Immatriculation"
         if "date" in cl: cols_ref[c] = "Date_Ref"
         if "nomclient" in cl: cols_ref[c] = "EXT Client"
         if "description" in cl: cols_ref[c] = "EXT_Matiere"
@@ -100,8 +117,8 @@ def process_satel_smirtom_enc(f_ter, f_fac):
     if 'Date_Ref' in df_ref.columns: df_ref['Date_Ref'] = pd.to_datetime(df_ref['Date_Ref'], errors='coerce').dt.date
     if 'Num Ticket' in df_ter.columns: df_ter['Num Ticket'] = df_ter['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
     if 'Num Ticket' in df_ref.columns: df_ref['Num Ticket'] = df_ref['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
-    df_ter['K'] = df_ter['Num Ticket'].astype(str).str.strip().str.upper().replace(['NAN', '', 'NONE'], np.nan)
-    df_ref['K'] = df_ref['Num Ticket'].astype(str).str.strip().str.upper().replace(['NAN', '', 'NONE'], np.nan)
+    df_ter['K'] = df_ter['Num Ticket'].astype(str).str.strip().str.upper().replace(['NAN', '', 'NONE', 'ST'], np.nan)
+    df_ref['K'] = df_ref['Num Ticket'].astype(str).str.strip().str.upper().replace(['NAN', '', 'NONE', 'ST'], np.nan)
     m1 = pd.merge(df_ter.dropna(subset=['K']), df_ref.dropna(subset=['K']), on='K', how='outer', indicator=True, suffixes=('_T', '_F'))
     match1 = m1[m1['_merge'] == 'both'].copy(); match1['Methode'] = '1. Ticket Exact'
     ids_t = match1['K'].unique(); ids_f = match1['K'].unique()
@@ -126,6 +143,8 @@ def process_satel_smirtom_enc(f_ter, f_fac):
     final = pd.concat([match1, match2, orph_t, orph_f], ignore_index=True)
     if 'Num Ticket_F' in final.columns: final['Num Ticket'] = final['Num Ticket_F'].fillna(final.get('Num Ticket_T')).fillna('').astype(str)
     else: final['Num Ticket'] = resolve_col(final, 'Num Ticket').fillna('').astype(str)
+    
+    final['Num Bon'] = resolve_col(final, 'Num Bon').fillna('').astype(str)
     final['Date_Ref'] = resolve_col(final, 'Date_Ref').apply(convertir_date_robuste)
     final['Poids_Terrain'] = pd.to_numeric(resolve_col(final, 'Poids_Terrain'), errors='coerce').fillna(0)
     final['Poids_Facture'] = pd.to_numeric(resolve_col(final, 'Poids_Facture'), errors='coerce').fillna(0); final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']

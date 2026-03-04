@@ -44,7 +44,7 @@ def charger_vert_compost_smirtom(f):
                         "Num Ticket": ticket_val,
                         "Poids_Terrain": row[9],
                         "Client": str(row[2]).strip() if len(row) > 2 else "",
-                        "Immat": str(row[4]).strip() if len(row) > 4 else "",
+                        "Immatriculation": str(row[4]).strip() if len(row) > 4 else "",
                         "Num Bon": str(row[5]).strip().replace(".0","") if len(row) > 5 else "",
                         "Chauffeur": str(row[3]).strip() if len(row) > 3 else "",
                         "Matiere_T": str(row[8]).strip() if len(row) > 8 else ""
@@ -73,7 +73,7 @@ def process_vert_compost_smirtom(f_ter, f_fac):
         if "ticket n°" in cl or "numéro de pesée" in cl: cols_ref[c] = "Num Ticket"
         if "net (kg)" in cl: cols_ref[c] = "Poids_Facture" 
         elif "quantité" in cl and "net" not in cl: cols_ref[c] = "Poids_Facture"
-        if "matricule" in cl or "immatriculation" in cl: cols_ref[c] = "Immat"
+        if "matricule" in cl or "immatriculation" in cl: cols_ref[c] = "Immatriculation"
         if "date" in cl and "sortie" not in cl: cols_ref[c] = "Date_Ref"
         if "produit" in cl: cols_ref[c] = "EXT_Matiere"
         if "client" in cl: cols_ref[c] = "EXT Client"
@@ -136,8 +136,8 @@ def process_vert_compost_smirtom(f_ter, f_fac):
     c_ext = final.get('EXT Client', pd.Series([np.nan]*len(final))); c_ext_f = final.get('EXT Client_F', pd.Series([np.nan]*len(final)))
     final['EXT Client'] = c_ext.fillna(c_ext_f).astype(str).replace('nan', '')
     final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']
-    c_im = final.get('Immat', pd.Series([np.nan]*len(final))); c_im_t = final.get('Immat_T', pd.Series([np.nan]*len(final))); c_im_f = final.get('Immat_F', pd.Series([np.nan]*len(final)))
-    final['Immat'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace('nan', '')
+    c_im = final.get('Immatriculation', pd.Series([np.nan]*len(final))); c_im_t = final.get('Immatriculation_T', pd.Series([np.nan]*len(final))); c_im_f = final.get('Immatriculation_F', pd.Series([np.nan]*len(final)))
+    final['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace('nan', '')
     c_nb = final.get('Num Bon', pd.Series([np.nan]*len(final))); c_nb_t = final.get('Num Bon_T', pd.Series([np.nan]*len(final)))
     final['Num Bon'] = c_nb.fillna(c_nb_t).astype(str).replace('nan', '')
     c_ch = final.get('Chauffeur', pd.Series([np.nan]*len(final))); c_ch_t = final.get('Chauffeur_T', pd.Series([np.nan]*len(final)))

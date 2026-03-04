@@ -1419,7 +1419,7 @@ else:
         # Fetch dynamic providers
         prestataires_dynamiques = get_prestataires_dynamiques(engine)
         noms_dynamiques = [p['nom'] for p in prestataires_dynamiques] if prestataires_dynamiques else []
-        tous_prestataires = sorted(["DUPILLE", "PICHETA GPSEO", "PICHETA INOE", "PICHETA SMIRTOM", "PICHETA VALOSEINE", "SUEZ", "VALENE", "AZALYS SOTREMA", "AZALYS VALOSEINE", "VALOSEINE ENC GPSEO", "VERT COMPOST SMIRTOM", "SATEL SMIRTOM ENC"] + noms_dynamiques)
+        tous_prestataires = sorted(["DUPILLE", "PICHETA GPSEO", "PICHETA INOE", "PICHETA SMIRTOM", "PICHETA VALOSEINE", "SUEZ", "VALENE", "AZALYS SOTREMA", "AZALYS VALOSEINE", "VERT COMPOST SMIRTOM", "SATEL SMIRTOM ENC"] + noms_dynamiques)
 
         provider = st.sidebar.radio("Choisir le prestataire", tous_prestataires, on_change=clear_app_state)
         st.divider()
@@ -1587,23 +1587,23 @@ else:
 
 
 
-        elif provider == "VALOSEINE ENC GPSEO":
-            st.title("Import VALOSEINE ENC GPSEO")
-            c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="ve_t")
-            f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="ve_f")
+        # elif provider == "VALOSEINE ENC GPSEO":
+        #     st.title("Import VALOSEINE ENC GPSEO")
+        #     c1, c2 = st.columns(2)
+        #     f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="ve_t")
+        #     f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="ve_f")
             
-            if st.button("Lancer"):
-                if f_ter and f_fac:
-                    final = process_valoseine_enc(f_ter, f_fac)
-                    st.session_state['df_valoseine_enc'] = final
+        #     if st.button("Lancer"):
+        #         if f_ter and f_fac:
+        #             final = process_valoseine_enc(f_ter, f_fac)
+        #             st.session_state['df_valoseine_enc'] = final
                     
-            if 'df_valoseine_enc' in st.session_state:
-                 df = st.session_state['df_valoseine_enc']
-                 display_results(df)
-                 if st.button("💾 Enregistrer tout en Base", type="primary", key="save_ve"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+        #     if 'df_valoseine_enc' in st.session_state:
+        #          df = st.session_state['df_valoseine_enc']
+        #          display_results(df)
+        #          if st.button("💾 Enregistrer tout en Base", type="primary", key="save_ve"): 
+        #             save_to_db(df, engine)
+        #             st.success("Données enregistrées avec succès !")
 
         elif provider == "VERT COMPOST SMIRTOM":
             st.title("Import VERT COMPOST SMIRTOM")

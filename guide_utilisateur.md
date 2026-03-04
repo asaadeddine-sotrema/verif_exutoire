@@ -73,8 +73,9 @@ Au dessus du tableau, utilisez les filtres pour cibler votre analyse :
 
 ### 2. Correction "Smart Match"
 L'outil est intelligent :
-*   Si le numéro de Ticket diffère légèrement (ex: erreur de saisie), il essaie de retrouver la ligne grâce à la **Date** et au **Poids**.
+*   Si le numéro de Ticket diffère légèrement (ex: erreur de saisie), il essaie de retrouver la ligne grâce à la **Date** et au **Poids** (Tolérance de 10 kg).
 *   Il gère automatiquement les noms de sites variés (ex: "CTC MLV" est bien reconnu comme "BUCHELAY").
+*   **Pour Valene spécifiquement :** Le Smart Match gère également la scission de facturation. Si 2 camions ont été facturés séparément mais regroupés sur 1 ligne au terrain (ou l'inverse), l'outil fera le total journalier et les fusionnera. De plus, Valene possède une traduction automatique de matières ("DIB" ou "INCINERABLE" -> "ORDURES MENAGERES").
 
 ### 3. Exporter
 Une fois les vérifications terminées, cliquez sur le bouton **"📥 Télécharger Excel"** pour récupérer le fichier traité avec toutes les colonnes de vérification ajoutées.

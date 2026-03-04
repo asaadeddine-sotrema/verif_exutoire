@@ -30,8 +30,12 @@ def normalize_site_key(txt):
 def normaliser_matiere_valene(m):
     if not m or pd.isna(m): return ""
     s = str(m).upper().strip()
+    # Remplacer É par E pour les ordures ménagères (et similaires)
+    s = s.replace("É", "E").replace("È", "E")
+    
     if "PAPIER" in s or "CARTON" in s: return "PAPIERS/CARTONS"
-    if "EMBALLAGE" in s or "PAV" in s: return "EMBALLAGES"
+    if "EMBALLAGE" in s or "PAV" in s: return "EMBALLAGES MENAGERS RECYCLABLES"
+    if "DECHETS INDUSTRIELS BANALS" in s or "DIB" in s or "INCINERABLE" in s: return "ORDURES MENAGERES"
     if "SOTREMA" in s: return "MENAGERS"
     return s
 
@@ -41,18 +45,20 @@ def normaliser_matiere_picheta_valoseine(m):
     if "GRAVATS" in s: return "GRAVATS"
     if "DECHETS VERTS" in s or "VERTS" in s: return "DECHETS VERTS"
     if "BOIS" in s: return "BOIS"
-    if "TOUT VENANT" in s or "ENCOMBRANTS" in s: return "TOUT VENANT"
+    if "ENCOMBRANTS" in s: return "DIB"
+    if "TOUT VENANT" in s: return "TOUT VENANT"
     return s
 
 def resolve_col(df, base_name):
     """Helper to find a column even if it was renamed with _T or _F suffixes"""
-    if base_name in df.columns: return df[base_name]
     ct, cf = f"{base_name}_T", f"{base_name}_F"
-    if ct in df.columns and cf in df.columns:
-        return df[ct].fillna(df[cf])
-    if ct in df.columns: return df[ct]
-    if cf in df.columns: return df[cf]
-    return pd.Series([np.nan]*len(df))
+    fallback = pd.Series([np.nan]*len(df), index=df.index)
+    c_t = df.get(ct, fallback)
+    c_f = df.get(cf, fallback)
+    
+    if base_name in df.columns:
+        return df[base_name].fillna(c_t).fillna(c_f)
+    return c_t.fillna(c_f)
 
 def clean_client_match(c):
     if not c or pd.isna(c): return ""
@@ -66,7 +72,8 @@ def charger_valene(f, source):
         idx = 0
         for i, r in temp.iterrows():
             if "Num Ticket" in str(r.values) or "N° de pesée" in str(r.values): idx = i; break
-        f.seek(0); df = pd.read_excel(f, header=idx, dtype=str)
+        if hasattr(f, 'seek'): f.seek(0)
+        df = pd.read_excel(f, header=idx, dtype=str)
         cols = {}
         for c in df.columns:
             cl = str(c).lower()
@@ -133,15 +140,158 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
         if "n° de pesée" in cl: cols_ref[c] = "Num Ticket"
         if "poids" in cl and "net" in cl: cols_ref[c] = "Poids_Facture" 
         elif "poids de la matière" in cl: cols_ref[c] = "Poids_Facture"
-        if "date d'entrée" in cl or "date de pesée" in cl: cols_ref[c] = "Date_Ref"
         if "immatriculation" in cl or "véhicule" in cl: cols_ref[c] = "Immatriculation"
+        if "date" in cl: cols_ref[c] = "Date_Ref"
     df_ref = df_ref.rename(columns=cols_ref); df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
+    if 'Date_Ref' in df_ref.columns:
+        df_ref['Date_Ref'] = df_ref['Date_Ref'].apply(convertir_date_robuste)
+    
+    # Nettoyage des lignes completement vides
+    df_ter = df_ter.dropna(how='all', subset=[c for c in df_ter.columns if c not in ['Activité', 'Client']])
+    df_ref = df_ref.dropna(how='all')
+    
     if 'Num Ticket' in df_ref.columns: df_ref['Num Ticket'] = df_ref['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True)
     df_ter['Matiere_T'] = df_ter['Matiere_T'].apply(normaliser_matiere_valene)
     if 'EXT_Matiere' in df_ref.columns: df_ref['EXT_Matiere_Norm'] = df_ref['EXT_Matiere'].apply(normaliser_matiere_valene)
     else: df_ref['EXT_Matiere_Norm'] = ""
-    merged = pd.merge(df_ter, df_ref, on='Num Ticket', how='outer', indicator=True, suffixes=('_T', '_F'))
+    # --------- SMART MATCH VALENE ---------
+    df_ter['K'] = df_ter['Num Ticket'].astype(str).str.strip().str.upper().replace('NAN', np.nan).replace('', np.nan)
+    df_ref['K'] = df_ref['Num Ticket'].astype(str).str.strip().str.upper().replace('NAN', np.nan).replace('', np.nan)
+
+    # 1. Match Exact sur Ticket
+    m1 = pd.merge(df_ter.dropna(subset=['K']), df_ref.dropna(subset=['K']), on='K', how='outer', indicator=True, suffixes=('_T', '_F'))
+    match1 = m1[m1['_merge'] == 'both'].copy()
+    match1['Methode'] = '1. Ticket Exact'
+
+    matched_ids_t = match1['K'].unique()
+    matched_ids_f = match1['K'].unique()
+    l_ter = df_ter[~df_ter['K'].isin(matched_ids_t)].copy()
+    l_ref = df_ref[~df_ref['K'].isin(matched_ids_f)].copy()
+
+    # 2. Match Intelligent sur Date et Poids (pour la facturation sans ticket ou erreur)
+    match2 = pd.DataFrame()
+    if not l_ter.empty and not l_ref.empty:
+        l_ter['Key_Date'] = l_ter['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN") if 'Date_Ref' in l_ter.columns else "NAN"
+        l_ref['Key_Date'] = l_ref['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN") if 'Date_Ref' in l_ref.columns else "NAN"
+        
+        l_ter_valid = l_ter[l_ter['Key_Date'] != "NAN"].copy()
+        l_ref_valid = l_ref[l_ref['Key_Date'] != "NAN"].copy()
+
+        # PRE-AGREGATION des tickets Terrain sur le Num Bon
+        # Parfois, il y a 2 tickets pour 1 seul bon, et Valene ne fournit pas Num Bon dans sa facture
+        if 'Num Bon' in l_ter_valid.columns:
+            # Séparer les lignes avec bons valides des lignes sans bon
+            mask_has_bon_ter = l_ter_valid['Num Bon'].astype(str).str.strip().str.upper().replace(['NAN', 'NONE', '0', '0.0', ''], np.nan).notna()
+            ter_with_bon = l_ter_valid[mask_has_bon_ter].copy()
+            ter_no_bon = l_ter_valid[~mask_has_bon_ter].copy()
+            
+            # Agréger les poids pour les mêmes Bons le même jour
+            if not ter_with_bon.empty:
+                ter_with_bon['Poids_Terrain'] = pd.to_numeric(ter_with_bon['Poids_Terrain'], errors='coerce').fillna(0)
+                
+                agg_funcs = {c: 'first' for c in ter_with_bon.columns if c != 'Poids_Terrain' and c != 'Num Ticket'}
+                agg_funcs['Poids_Terrain'] = 'sum'
+                agg_funcs['Num Ticket'] = lambda x: ' + '.join(x.astype(str))
+                
+                ter_agg = ter_with_bon.groupby(['Key_Date', 'Num Bon'], as_index=False).agg(agg_funcs)
+                l_ter_valid = pd.concat([ter_agg, ter_no_bon], ignore_index=True)
+
+        if not l_ter_valid.empty and not l_ref_valid.empty:
+            m_cross = pd.merge(l_ter_valid, l_ref_valid, on='Key_Date', how='inner', suffixes=('_T', '_F'))
+            if not m_cross.empty:
+                p_t = pd.to_numeric(m_cross['Poids_Terrain'], errors='coerce').fillna(0)
+                p_f = pd.to_numeric(m_cross['Poids_Facture'], errors='coerce').fillna(0)
+                m_cross['Delta_Poids'] = (p_t - p_f).abs()
+                
+                # Tolérance de 0.5 T pour le rapprochement
+                candidates = m_cross[m_cross['Delta_Poids'] <= 0.5].copy()
+                candidates = candidates.sort_values('Delta_Poids')
+                
+                match2 = candidates.drop_duplicates(subset=['Key_Date', 'Poids_Terrain'], keep='first')
+                
+                if not match2.empty:
+                    match2['Methode'] = '2. Rapprochement Intelligent'
+                    match2['_merge'] = 'both'
+                    matched_uids_ter = (match2['Key_Date'].astype(str) + "_" + match2['Poids_Terrain'].astype(str)).tolist()
+                    l_ter['_UID'] = l_ter['Key_Date'].astype(str) + "_" + l_ter['Poids_Terrain'].astype(str)
+                    final_t = l_ter[~l_ter['_UID'].isin(matched_uids_ter)].drop(columns=['_UID'])
+                    
+                    if 'Num Ticket_F' in match2.columns:
+                        matched_tickets = match2['Num Ticket_F'].tolist()
+                        final_f = l_ref[~l_ref['Num Ticket'].isin(matched_tickets)]
+                    else: 
+                        final_f = l_ref
+                else: 
+                    final_t, final_f = l_ter, l_ref
+            else: 
+                final_t, final_f = l_ter, l_ref
+        else: 
+            final_t, final_f = l_ter, l_ref
+    else: 
+        final_t, final_f = l_ter, l_ref
+
+    # 3. Match 3 : Agrégation Journalière Combinatoire (Sans Plaque d'Immat)
+    match3 = pd.DataFrame()
+    if not final_t.empty and not final_f.empty:
+        valid_t = final_t[final_t['Key_Date'] != "NAN"].copy()
+        valid_f = final_f[final_f['Key_Date'] != "NAN"].copy()
+
+        if not valid_t.empty and not valid_f.empty:
+            valid_t['Poids_Terrain'] = pd.to_numeric(valid_t['Poids_Terrain'], errors='coerce').fillna(0)
+            valid_f['Poids_Facture'] = pd.to_numeric(valid_f['Poids_Facture'], errors='coerce').fillna(0)
+            
+            # Essayer de trouver pour chaque date s'il y a un groupe de lignes dont la somme correspond (erreur < 0.5T)
+            # Puisque l'immatriculation n'est pas fiable, on va grouper par Date globale.
+            # ATTENTION: Si on groupe tout sur une date, on risque de fusionner des camions différents,
+            # on va donc chercher des combinaisons.
+            
+            # Approche simplifiée: Pour chaque Date, si la Somme(Terrain) ~= Somme(Facture), on agrège TOUT.
+            agg_t = {c: 'first' for c in valid_t.columns if c not in ['Poids_Terrain', 'Num Ticket', 'Num Bon', 'Key_Date']}
+            agg_t['Poids_Terrain'] = 'sum'
+            agg_t['Num Ticket'] = lambda x: ' + '.join(x.dropna().astype(str))
+            agg_t['Num Bon'] = lambda x: ' + '.join(x.dropna().astype(str).unique())
+            group_t = valid_t.groupby(['Key_Date'], as_index=False).agg(agg_t)
+            
+            agg_f = {c: 'first' for c in valid_f.columns if c not in ['Poids_Facture', 'Num Ticket', 'Key_Date']}
+            agg_f['Poids_Facture'] = 'sum'
+            agg_f['Num Ticket'] = lambda x: ' + '.join(x.dropna().astype(str))
+            group_f = valid_f.groupby(['Key_Date'], as_index=False).agg(agg_f)
+
+            m_cross3 = pd.merge(group_t, group_f, on=['Key_Date'], how='inner', suffixes=('_T', '_F'))
+            if not m_cross3.empty:
+                m_cross3['Delta_Poids'] = (m_cross3['Poids_Terrain'] - m_cross3['Poids_Facture']).abs()
+                candidates3 = m_cross3[m_cross3['Delta_Poids'] <= 0.5].copy()
+                
+                if not candidates3.empty:
+                    match3 = candidates3.copy()
+                    match3['Methode'] = '3. Cumul Journalier Total'
+                    match3['_merge'] = 'both'
+                    
+                    # Retirer les lignes utilisées
+                    used_keys = match3['Key_Date'].tolist()
+                    final_t = final_t[~final_t['Key_Date'].isin(used_keys)]
+                    final_f = final_f[~final_f['Key_Date'].isin(used_keys)]
+                    
+                    match3 = match3.drop(columns=['Delta_Poids'])
+
+    # Orphelins
+    cols_ter_orig = df_ter.columns
+    cols_ref_orig = df_ref.columns
+    final_orph_t = final_t.rename(columns={c: str(c) + '_T' for c in cols_ter_orig})
+    final_orph_f = final_f.rename(columns={c: str(c) + '_F' for c in cols_ref_orig})
+    final_orph_t['_merge'] = 'left_only'
+    final_orph_t['Methode'] = 'Non Trouvé'
+    final_orph_f['_merge'] = 'right_only'
+    final_orph_f['Methode'] = 'Non Trouvé'
+
+    merged = pd.concat([match1, match2, match3, final_orph_t, final_orph_f], ignore_index=True)
+    # ----------------------------------------
     
+    if 'Num Ticket_F' in merged.columns:
+        merged['Num Ticket'] = merged['Num Ticket_F'].fillna(merged.get('Num Ticket_T')).fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
+    else:
+        merged['Num Ticket'] = resolve_col(merged, 'Num Ticket').fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
+
     c_cl = merged.get('Client', pd.Series([np.nan]*len(merged)))
     c_cl_t = merged.get('Client_T', pd.Series([np.nan]*len(merged)))
     c_cl_f = merged.get('Client_F', pd.Series([np.nan]*len(merged)))
@@ -161,9 +311,19 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
     c_im_t = merged.get('Immatriculation_T', pd.Series([np.nan]*len(merged)))
     c_im_f = merged.get('Immatriculation_F', pd.Series([np.nan]*len(merged)))
     merged['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f)
+    
     merged['Exutoire'] = "VALENE"
-    merged['Poids_Terrain'] = np.floor(pd.to_numeric(merged['Poids_Terrain'], errors='coerce').fillna(0) * 100) / 100
-    merged['Poids_Facture'] = np.floor(pd.to_numeric(merged['Poids_Facture'], errors='coerce').fillna(0) * 100) / 100
+    
+    p_ter_t = pd.to_numeric(merged.get('Poids_Terrain_T', 0), errors='coerce').fillna(0)
+    merged['Poids_Terrain'] = pd.to_numeric(merged.get('Poids_Terrain', 0), errors='coerce').fillna(0)
+    merged['Poids_Terrain'] = np.where(merged['Poids_Terrain'] > 0, merged['Poids_Terrain'], p_ter_t)
+
+    p_fac_f = pd.to_numeric(merged.get('Poids_Facture_F', 0), errors='coerce').fillna(0)
+    merged['Poids_Facture'] = pd.to_numeric(merged.get('Poids_Facture', 0), errors='coerce').fillna(0)
+    merged['Poids_Facture'] = np.where(merged['Poids_Facture'] > 0, merged['Poids_Facture'], p_fac_f)
+
+    merged['Poids_Terrain'] = np.floor(merged['Poids_Terrain'] * 100) / 100
+    merged['Poids_Facture'] = np.floor(merged['Poids_Facture'] * 100) / 100
     
     merged['Poids_Terrain'] = np.where(merged['Poids_Terrain'] >= 99, 0, merged['Poids_Terrain'])
     merged['Poids_Facture'] = np.where(merged['Poids_Facture'] >= 99, 0, merged['Poids_Facture'])
@@ -171,7 +331,8 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
     merged['Ecart'] = merged['Poids_Terrain'] - merged['Poids_Facture']
     merged['INT Client'] = merged.get('Client_T', merged.get('Client', '')).fillna('')
     merged['EXT Client'] = merged.get('Client_F', '').fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
-    merged['Verif_Exutoire'] = (merged['_merge'] == 'both').replace({True:'OK', False:'Pb.Ext'})
+    
+    merged['Verif_Exutoire'] = np.where(merged['_merge'] == 'both', 'OK', 'Pb.Ext')
     merged['Verif_Matiere'] = (merged['Matiere_T'] == merged['EXT_Matiere_Norm']).replace({True:'OK', False:'Pb.Mat'})
     merged['Verif_Tonnes'] = (abs(merged['Ecart']) < 0.005).replace({True:'OK', False:'Pb.T'})
     
@@ -254,7 +415,7 @@ def process_valoseine(f_ter, f_fac):
         if "document" in row_str and "date" in row_str: idx_ref = i; break
         if "n° bon" in row_str and "date" in row_str: idx_ref = i; break
             
-    f_fac.seek(0)
+    if hasattr(f_fac, 'seek'): f_fac.seek(0)
     df_ref = pd.read_excel(f_fac, header=idx_ref, dtype=str)
     
     cols_ref = {}
@@ -263,13 +424,40 @@ def process_valoseine(f_ter, f_fac):
         if "document" in cl or "n° bon" in cl: cols_ref[c] = "Num Ticket"
         if "q liv" in cl or "poids" in cl: cols_ref[c] = "Poids_Facture"
         if "code adresse" in cl: cols_ref[c] = "TEMP_CodeAdresse"
-        if "date" in cl: cols_ref[c] = "Date_Ref"
+        if "date" in cl and "heure" not in cl: cols_ref[c] = "Date_Ref"
         if "immat" in cl: cols_ref[c] = "Immatriculation"
         if "libellé produit" in cl or "libelle produit" in cl: cols_ref[c] = "EXT_Matiere"
-    
+        if "chauffeur" in cl or "conducteur" in cl: cols_ref[c] = "Chauffeur"
+        
+    # Fallback pour fichiers Valoseine sans entête (basé sur l'absence de colonnes nommées)
+    if "Date_Ref" not in cols_ref.values() and any("Unnamed" in str(c) for c in df_ref.columns):
+        if hasattr(f_fac, 'seek'): f_fac.seek(0)
+        df_ref = pd.read_excel(f_fac, header=None, dtype=str)
+        df_ref = df_ref.dropna(how='all')
+        if len(df_ref.columns) >= 13:
+            cols_ref = {
+                df_ref.columns[0]: "Date_Ref",
+                df_ref.columns[3]: "Num Ticket",
+                df_ref.columns[4]: "Chauffeur",
+                df_ref.columns[5]: "Immatriculation",
+                df_ref.columns[7]: "TEMP_CodeAdresse",
+                df_ref.columns[8]: "EXT_Matiere",
+                df_ref.columns[9]: "Client_Fournisseur",
+                df_ref.columns[12]: "Poids_Facture"
+            }
+            # Ne garder que les lignes de données en validant la présence de chiffres dans le Poids
+            def is_poids_valide(val):
+                try: 
+                    float(str(val).replace(',', '.'))
+                    return True
+                except: return False
+            mask_valid = df_ref[df_ref.columns[12]].apply(is_poids_valide)
+            df_ref = df_ref[mask_valid]
+
     df_ref = df_ref.rename(columns=cols_ref)
     
     if "Poids_Facture" in df_ref.columns:
+        df_ref["Poids_Facture"] = df_ref["Poids_Facture"].astype(str).str.replace(',', '.')
         df_ref["Poids_Facture"] = pd.to_numeric(df_ref["Poids_Facture"], errors='coerce')
     
     if 'TEMP_CodeAdresse' in df_ref.columns:
@@ -285,7 +473,8 @@ def process_valoseine(f_ter, f_fac):
     if 'EXT_Matiere' in df_ref.columns:
         df_ref['EXT_Matiere'] = df_ref['EXT_Matiere'].apply(normaliser_matiere_picheta_valoseine)
     
-    df_ref['Date_Ref'] = df_ref['Date_Ref'].apply(convertir_date_robuste)
+    if 'Date_Ref' in df_ref.columns:
+        df_ref['Date_Ref'] = df_ref['Date_Ref'].apply(convertir_date_robuste)
 
     if 'Num Ticket' in df_ter.columns:
         df_ter['Num Ticket'] = df_ter['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
@@ -318,8 +507,8 @@ def process_valoseine(f_ter, f_fac):
 
     match2 = pd.DataFrame()
     if not l_ter.empty and not l_ref.empty:
-        l_ter['Key_Date'] = l_ter['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN")
-        l_ref['Key_Date'] = l_ref['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN")
+        l_ter['Key_Date'] = l_ter['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN") if 'Date_Ref' in l_ter.columns else "NAN"
+        l_ref['Key_Date'] = l_ref['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN") if 'Date_Ref' in l_ref.columns else "NAN"
         l_ter_valid = l_ter[l_ter['Key_Date'] != "NAN"].copy()
         l_ref_valid = l_ref[l_ref['Key_Date'] != "NAN"].copy()
 
@@ -376,8 +565,8 @@ def process_valoseine(f_ter, f_fac):
 
     cols_ter_orig = df_ter.columns
     cols_ref_orig = df_ref.columns
-    final_orph_t = final_t.rename(columns={c: c + '_T' for c in cols_ter_orig})
-    final_orph_f = final_f.rename(columns={c: c + '_F' for c in cols_ref_orig})
+    final_orph_t = final_t.rename(columns={c: str(c) + '_T' for c in cols_ter_orig})
+    final_orph_f = final_f.rename(columns={c: str(c) + '_F' for c in cols_ref_orig})
     final_orph_t['_merge'] = 'left_only'; final_orph_t['Methode'] = 'Non Trouvé'
     final_orph_f['_merge'] = 'right_only'; final_orph_f['Methode'] = 'Non Trouvé'
 
@@ -422,4 +611,20 @@ def process_valoseine(f_ter, f_fac):
         if s1.intersection(s2): return "OK"
         return "Pb.Clt"
     final['Verif_Client'] = final.apply(check_client_picheta, axis=1)
-    return final
+    
+    if 'Date' not in final.columns and 'Date_Ref' in final.columns:
+        final = final.rename(columns={'Date_Ref': 'Date'})
+    elif 'Date_Ref' in final.columns:
+        final['Date'] = final['Date_Ref']
+        
+    cols_final = ['Date', 'Exutoire', 'Client', 'INT Client', 'EXT Client', 'Activité', 'Num Ticket', 'Num Bon', 'Chauffeur', 'Immatriculation', 'EXT_Matiere', 'Matiere_T', 'Verif_Tonnes', 'Verif_Matiere', 'Verif_Exutoire', 'Verif_Client', 'Poids_Terrain', 'Poids_Facture', 'Ecart']
+    cols_str = ['Exutoire', 'Client', 'INT Client', 'EXT Client', 'Activité', 'Num Ticket', 'Num Bon', 'Chauffeur', 'Immatriculation', 'EXT_Matiere', 'Matiere_T', 'Verif_Tonnes', 'Verif_Matiere', 'Verif_Exutoire', 'Verif_Client']
+    
+    for c in cols_final:
+        if c not in final.columns: final[c] = ""
+    
+    for c in cols_str:
+        if c in final.columns:
+            final[c] = final[c].fillna('').astype(str).replace(['nan', 'NAN', 'None', '<NA>', 'NaN'], '')
+            
+    return final[cols_final]

@@ -188,7 +188,7 @@ def charger_valoseine_enc(f):
                         "Num Bon": str(row[5]).replace(".0","") if len(row) > 5 else "", 
                         "Matiere_T": row[8] if len(row) > 8 else "",
                         "Chauffeur": str(row[3]).replace("nan", "") if len(row) > 3 else "",
-                        "Immat": str(row[4]).replace("nan", "") if len(row) > 4 else ""
+                        "Immatriculation": str(row[4]).replace("nan", "") if len(row) > 4 else ""
                     })
         new_df = pd.DataFrame(data)
         if "Poids_Terrain" in new_df.columns: new_df["Poids_Terrain"] = pd.to_numeric(new_df["Poids_Terrain"], errors='coerce')
@@ -213,7 +213,7 @@ def process_valoseine_enc(f_ter, f_fac):
         if "ville de l'adresse de service" in cl: cols_ref[c] = "Client"
         if "description déchet" in cl: cols_ref[c] = "EXT_Matiere"
         if "nom du transporteur" in cl: cols_ref[c] = "Transporteur"
-        if "immat" in cl or "véhicule" in cl: cols_ref[c] = "Immat"
+        if "immat" in cl or "véhicule" in cl: cols_ref[c] = "Immatriculation"
     df_ref = df_ref.rename(columns=cols_ref)
     if 'Producteur' in df_ref.columns and 'Transporteur' in df_ref.columns:
         df_ref = df_ref[(df_ref['Producteur'].astype(str).str.strip().str.upper() == 'VALOOU47') & (df_ref['Transporteur'].astype(str).str.strip().str.upper() == 'SOTREMA')]
@@ -264,8 +264,8 @@ def process_valoseine_enc(f_ter, f_fac):
     final['EXT Client'] = final.get('Client_F', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
     c_ch = final.get('Chauffeur', pd.Series([np.nan]*len(final))); c_ch_t = final.get('Chauffeur_T', pd.Series([np.nan]*len(final))); c_ch_f = final.get('Chauffeur_F', pd.Series([np.nan]*len(final)))
     final['Chauffeur'] = c_ch.fillna(c_ch_t).fillna(c_ch_f).astype(str).replace('nan', '')
-    c_im = final.get('Immat', pd.Series([np.nan]*len(final))); c_im_t = final.get('Immat_T', pd.Series([np.nan]*len(final))); c_im_f = final.get('Immat_F', pd.Series([np.nan]*len(final)))
-    final['Immat'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace('nan', '')
+    c_im = final.get('Immatriculation', pd.Series([np.nan]*len(final))); c_im_t = final.get('Immatriculation_T', pd.Series([np.nan]*len(final))); c_im_f = final.get('Immatriculation_F', pd.Series([np.nan]*len(final)))
+    final['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace('nan', '')
     final['Activité'] = "ENCOMBRANTS"; final['Exutoire'] = "VALOSEINE ENC GPSEO"
     final['Verif_Exutoire'] = np.where(final['_merge'] == 'both', 'OK', 'Pb.Ext')
     final['Verif_Tonnes'] = (abs(final['Ecart']) < 0.05).replace({True:'OK', False:'Pb.T'})

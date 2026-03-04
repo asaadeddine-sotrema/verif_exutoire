@@ -196,8 +196,12 @@ def process_generique(f_terrain, f_facture, nom_prestataire, header_row, config)
     
     for c in cols_a_garder:
         if c not in df_final.columns:
-            df_final[c] = None
+            df_final[c] = ""
 
-    return df_final[cols_a_garder]
+    # Remplacer les NaN et les chaînes "nan" par du vide
+    df_final = df_final[cols_a_garder].fillna("")
+    df_final = df_final.replace(["nan", "NAN", "None", "<NA>"], "")
+
+    return df_final
 
 # End of code
