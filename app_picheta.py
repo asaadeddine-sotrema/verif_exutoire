@@ -93,27 +93,35 @@ def convertir_date_robuste(val):
     if pd.isna(val) or val == "":
         return pd.NaT
     
-    if isinstance(val, pd.Timestamp):
-        return val.date()
-    if isinstance(val, datetime.date):
-        return val
+    if isinstance(val, (datetime.date, pd.Timestamp)):
+        return val.date() if isinstance(val, pd.Timestamp) else val
 
+    v_str = str(val).strip()
+
+    # 1. Tentative Excel Serial (si numérique)
     try:
-        val_num = float(val)
+        val_num = float(v_str)
         if val_num > 30000:
             return pd.to_datetime(val_num, unit='D', origin='1899-12-30').date()
-    except (ValueError, TypeError):
-        pass
-
-    try:
-        return pd.to_datetime(val, format='%Y-%m-%d', errors='raise').date()
     except:
         pass
 
+    # 2. FORMATS FRANÇAIS STRICTS (pour éviter l'inversion Jour/Mois)
+    # On teste d'abord les formats les plus probables avec le JOUR en premier.
+    for fmt in ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y"]:
+        try:
+            return datetime.datetime.strptime(v_str, fmt).date()
+        except:
+            continue
+            
+    # 3. Fallback Pandas avec dayfirst=True
     try:
-        return pd.to_datetime(val, dayfirst=True, errors='coerce').date()
+        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
+        if pd.notna(dt): return dt.date()
     except:
-        return pd.NaT
+        pass
+        
+    return pd.NaT
 
 def update_csv_powerbi(df_new, chemin_csv):
     if df_new.empty: return "Aucune donnée."
@@ -243,7 +251,7 @@ def charger_picheta(chemin, source):
         idx = 0
         for i, r in temp.iterrows():
             row_str = str(r.values).lower()
-            if "tp manuel" in row_str or "nature" in row_str: 
+            if any(k in row_str for k in ["tp manuel", "nature", "date", "le", "journee"]): 
                 idx = i; break
         
         print(f"Chargement {source}: Header trouvé ligne {idx}")
@@ -262,7 +270,7 @@ def charger_picheta(chemin, source):
             if "nature" in cl or "description" in cl: cols[c] = "Matiere_T"
             
             # Priorité Date
-            if cl == "date": 
+            if cl in ["date", "le", "journee"]: 
                 cols[c] = "Date_Ref"
                 col_date_found = True
             elif "date" in cl and not col_date_found and "saisie" not in cl:
@@ -270,8 +278,8 @@ def charger_picheta(chemin, source):
                 # et on évite 'date saisie' qui est souvent vide
                 cols[c] = "Date_Ref"
 
-            if "nchantier" in cl: cols[c] = "Client" 
-            elif "exutoire" in cl and "Client" not in cols.values(): cols[c] = "Client" 
+            if "nchantier" in cl: cols[c] = "INT Client" 
+            elif "exutoire" in cl and "INT Client" not in cols.values(): cols[c] = "INT Client" 
             
             if ("bon" in cl or "vidage" in cl) and "nbr" not in cl and "nombre" not in cl: cols[c] = "Num Bon"
             if "chauffeur" in cl: cols[c] = "Chauffeur"
@@ -280,8 +288,8 @@ def charger_picheta(chemin, source):
         df = df.rename(columns=cols)
         df = df.loc[:, ~df.columns.duplicated()]
 
-        if "Client" not in df.columns:
-            df["Client"] = f"PICHETA GPSEO {source}"
+        if "INT Client" not in df.columns:
+            df["INT Client"] = f"PICHETA GPSEO {source}"
 
         if "Date_Ref" in df.columns:
             df["Date_Ref"] = df["Date_Ref"].apply(convertir_date_robuste)
@@ -321,8 +329,15 @@ def lancer_analyse():
         df_ter = pd.concat(dfs, ignore_index=True)
         print(f"Total Terrain brut: {len(df_ter)} lignes")
 
+        idx_ref = 0
+        for i, r in temp.iterrows():
+            row_str = str(r.values).lower()
+            # Détection plus souple de l'entête Facture
+            if ("document" in row_str or "n° bon" in row_str or "n° du bl" in row_str) and ("date" in row_str or "le" in row_str or "journée" in row_str): 
+                idx_ref = i; break
+                
         try: 
-            df_ref = pd.read_excel(f_exp, header=0) 
+            df_ref = pd.read_excel(f_exp, header=idx_ref) 
         except: 
             df_ref = pd.read_excel(f_exp, header=8) 
         
@@ -331,12 +346,32 @@ def lancer_analyse():
             cl = str(c).lower()
             if "document" in cl or "n° bon" in cl: cols_ref[c] = "Num Ticket"
             if "q liv" in cl or "poids" in cl: cols_ref[c] = "Poids_Facture"
-            if "code adresse" in cl: cols_ref[c] = "TEMP_CodeAdresse"
-            if "date" in cl: cols_ref[c] = "Date_Ref"
+            if "code adresse" in cl: cols_ref[c] = "EXT Client"
+            if cl in ["date", "le", "journee", "journée"]: cols_ref[c] = "Date_Ref"
+            elif "date" in cl and "Date_Ref" not in cols_ref.values(): cols_ref[c] = "Date_Ref"
             if "immat" in cl or "véhicule" in cl: cols_ref[c] = "Immatriculation"
 
         df_ref = df_ref.rename(columns=cols_ref)
         df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
+
+        # Gestion des RUPTURES (Code Adresse: ...)
+        def extract_rupture(row):
+            for v in row:
+                s = str(v).strip()
+                if s.lower().startswith("code adresse:"):
+                    return s.split(":", 1)[1].strip()
+            return np.nan
+        df_ref['_rupture'] = df_ref.apply(extract_rupture, axis=1)
+        df_ref['_rupture'] = df_ref['_rupture'].ffill()
+        
+        if 'EXT Client' in df_ref.columns:
+            df_ref['EXT Client'] = df_ref['EXT Client'].replace(['', 'nan', 'NAN', 'None'], np.nan).fillna(df_ref['_rupture'])
+        else:
+            df_ref['EXT Client'] = df_ref['_rupture']
+        
+        # Suppression des lignes de rupture
+        mask_rupture = df_ref.apply(lambda r: any("code adresse:" in str(v).lower() for v in r), axis=1)
+        df_ref = df_ref[~mask_rupture].copy()
 
         # FORCER EXT_Matiere
         df_ref['EXT_Matiere'] = "GRAVATS"
@@ -406,12 +441,12 @@ def lancer_analyse():
                 return merged_df, pd.DataFrame(), pd.DataFrame()
 
             # Identification des noms de colonnes Client
-            # Dans charger_picheta: cols[c] = "Client"
-            # Dans df_ref setup: cols_ref[c] = "TEMP_CodeAdresse"
+            # Dans charger_picheta: cols[c] = "INT Client"
+            # Dans df_ref setup: cols_ref[c] = "EXT Client"
             
             # Gestion des suffixes potentiels mis par pd.merge s'il y avait conflit (peu probable ici mais robuste)
-            c_int = 'Client_T' if 'Client_T' in merged_df.columns else 'Client'
-            c_ext = 'TEMP_CodeAdresse_F' if 'TEMP_CodeAdresse_F' in merged_df.columns else 'TEMP_CodeAdresse'
+            c_int = 'INT Client_T' if 'INT Client_T' in merged_df.columns else 'INT Client'
+            c_ext = 'EXT Client_F' if 'EXT Client_F' in merged_df.columns else 'EXT Client'
 
             # Application du filtre
             mask_ok = merged_df.apply(lambda r: check_client_compatibility(r, c_int, c_ext), axis=1)
@@ -588,17 +623,17 @@ def lancer_analyse():
         # mais on fallback sur la version brute (Target/Facture) si elle existe (pour les nons matchés)
         
         # INT CLIENT
-        if 'Client_T' in merged.columns:
-            merged['INT Client'] = merged['Client_T'].fillna(merged.get('Client', ''))
+        if 'INT Client_T' in merged.columns:
+            merged['INT Client'] = merged['INT Client_T'].fillna(merged.get('INT Client', ''))
         else:
-            merged['INT Client'] = merged.get('Client', '')
+            merged['INT Client'] = merged.get('INT Client', '')
         merged['INT Client'] = merged['INT Client'].replace('', 'PICHETA INCONNU')
 
         # EXT CLIENT
-        if 'TEMP_CodeAdresse_F' in merged.columns:
-             merged['EXT Client'] = merged['TEMP_CodeAdresse_F'].fillna(merged.get('TEMP_CodeAdresse', ''))
+        if 'EXT Client_F' in merged.columns:
+             merged['EXT Client'] = merged['EXT Client_F'].fillna(merged.get('EXT Client', ''))
         else:
-             merged['EXT Client'] = merged.get('TEMP_CodeAdresse', '')
+             merged['EXT Client'] = merged.get('EXT Client', '')
 
         remplacements = {
             "DECHETTERIE MLV VAUCOULEURS": "DECHETTERIE VAUCOULEURS", 

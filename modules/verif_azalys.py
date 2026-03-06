@@ -12,12 +12,40 @@ logger = logging.getLogger(__name__)
 
 def convertir_date_robuste(val):
     if pd.isna(val) or val == "": return pd.NaT
-    if isinstance(val, (datetime, pd.Timestamp)): return val
-    s = str(val).strip()
-    for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"]:
-        try: return datetime.strptime(s, fmt)
-        except: continue
-    return pd.to_datetime(val, errors='coerce')
+    if isinstance(val, (datetime, pd.Timestamp)): 
+        return val.date() if isinstance(val, (pd.Timestamp, datetime)) else val
+    v_str = str(val).strip()
+    
+    # 1. Tentative Excel Serial
+    try:
+        val_num = float(v_str)
+        if val_num > 30000:
+            return pd.to_datetime(val_num, unit='D', origin='1899-12-30').date()
+    except:
+        pass
+
+    # 2. FORMATS ISO
+    if len(v_str) >= 10 and v_str[4] == '-' and v_str[7] == '-' and v_str[0:4].isdigit():
+        try:
+            return datetime.strptime(v_str[:10], "%Y-%m-%d").date()
+        except:
+            pass
+
+    # 3. FORMATS FRANÇAIS STRICTS
+    for fmt in ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y", "%d/%m/%Y %H:%M:%S", "%d-%m-%Y %H:%M:%S"]:
+        try:
+            return datetime.strptime(v_str, fmt).date()
+        except:
+            continue
+            
+    # 4. Fallback Pandas avec dayfirst=True
+    try:
+        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
+        if pd.notna(dt): return dt.date()
+    except:
+        pass
+        
+    return pd.NaT
 
 def normalize_site_key(txt):
     if not txt or pd.isna(txt): return "NAN"
@@ -53,19 +81,20 @@ def charger_azalys(f, source_name="AZALYS"):
             cl = str(c).lower().strip()
             if "num tp manuel" in cl: cols[c] = "Num Ticket"
             elif "n°bon de vidage" in cl: cols[c] = "Num Bon"
-            elif "tonnages" in cl: cols[c] = "Poids_Terrain"
-            elif "date" in cl: cols[c] = "Date_Ref"
+            elif "poids" in cl: cols[c] = "Poids_Terrain"
+            elif "date" in cl or cl in ["le", "journee", "journée"]: cols[c] = "Date_Ref"
             elif "exutoire" in cl: cols[c] = "Exutoire"
             elif "chauffeur" in cl: cols[c] = "Chauffeur"
             elif "nchantier" in cl: cols[c] = "Client"
             elif "nature" in cl: cols[c] = "Matiere_T"
             
         df = df.rename(columns=cols)
+        df = df.loc[:, ~df.columns.duplicated()]
         if "Poids_Terrain" in df.columns:
             df["Poids_Terrain"] = pd.to_numeric(df["Poids_Terrain"], errors='coerce')
         df['Activité'] = source_name
         if 'Date_Ref' in df.columns:
-             df['Date_Ref'] = pd.to_datetime(df['Date_Ref'], errors='coerce').dt.date
+             df['Date_Ref'] = df['Date_Ref'].apply(convertir_date_robuste)
         return df
     except Exception as e:
         logger.error(f"Erreur chargement Azalys ({source_name}): {e}")
@@ -82,17 +111,39 @@ def process_azalys(f_ter, f_fac, provider_name):
         cl = str(c).lower().strip()
         if "numéro de ticket" in cl: cols_ref[c] = "Num Ticket"
         if "net" in cl: cols_ref[c] = "Poids_Facture"
-        if "date du poids" in cl and "entrée" in cl: cols_ref[c] = "Date_Ref"
+        if ("date" in cl and "entrée" in cl) or cl in ["le", "journee", "journée"]: cols_ref[c] = "Date_Ref"
+        elif "date" in cl: cols_ref[c] = "Date_Ref"
         if "libellé tiers" in cl: cols_ref[c] = "Client"
         if "libellé produit" in cl: cols_ref[c] = "EXT_Matiere"
         if "unité" in cl: cols_ref[c] = "Unite"
         if "immat" in cl or "véhicule" in cl: cols_ref[c] = "Immatriculation"
 
     df_ref = df_ref.rename(columns=cols_ref)
+    df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
+
+    # Gestion des RUPTURES (Code Adresse: ...)
+    def extract_rupture(row):
+        for v in row:
+            s = str(v).strip()
+            if s.lower().startswith("code adresse:"):
+                return s.split(":", 1)[1].strip()
+        return np.nan
+    df_ref['_rupture'] = df_ref.apply(extract_rupture, axis=1)
+    df_ref['_rupture'] = df_ref['_rupture'].ffill()
+    
+    if 'TEMP_CodeAdresse' in df_ref.columns:
+        df_ref['EXT Client'] = df_ref['TEMP_CodeAdresse'].replace(['', 'nan', 'NAN', 'None'], np.nan).fillna(df_ref['_rupture'])
+    else:
+        df_ref['EXT Client'] = df_ref['_rupture']
+    
+    # Suppression des lignes de rupture
+    mask_rupture = df_ref.apply(lambda r: any("code adresse:" in str(v).lower() for v in r), axis=1)
+    df_ref = df_ref[~mask_rupture].copy()
+
     if "Poids_Facture" in df_ref.columns:
         df_ref["Poids_Facture"] = pd.to_numeric(df_ref["Poids_Facture"], errors='coerce') / 1000.0
     if 'Date_Ref' in df_ref.columns:
-         df_ref['Date_Ref'] = pd.to_datetime(df_ref['Date_Ref'], errors='coerce').dt.date
+         df_ref['Date_Ref'] = df_ref['Date_Ref'].apply(convertir_date_robuste)
 
     if 'Num Ticket' in df_ter.columns:
         df_ter['Num Ticket'] = df_ter['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
@@ -136,15 +187,16 @@ def process_azalys(f_ter, f_fac, provider_name):
     else: final['Num Ticket'] = resolve_col(final, 'Num Ticket').fillna('').astype(str)
     final['Num Bon'] = resolve_col(final, 'Num Bon').fillna('').astype(str)
     final['Date_Ref'] = resolve_col(final, 'Date_Ref').apply(convertir_date_robuste)
-    p_tt = pd.to_numeric(final.get('Poids_Terrain_T', 0), errors='coerce').fillna(0)
-    final['Poids_Terrain'] = pd.to_numeric(final.get('Poids_Terrain', 0), errors='coerce').fillna(0)
+    p_tt = pd.to_numeric(final.get('Poids_Terrain_T', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
+    final['Poids_Terrain'] = pd.to_numeric(final.get('Poids_Terrain', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
     final['Poids_Terrain'] = np.where(final['Poids_Terrain'] > 0, final['Poids_Terrain'], p_tt)
-    p_ff = pd.to_numeric(final.get('Poids_Facture_F', 0), errors='coerce').fillna(0)
-    final['Poids_Facture'] = pd.to_numeric(final.get('Poids_Facture', 0), errors='coerce').fillna(0)
+    p_ff = pd.to_numeric(final.get('Poids_Facture_F', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
+    final['Poids_Facture'] = pd.to_numeric(final.get('Poids_Facture', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
     final['Poids_Facture'] = np.where(final['Poids_Facture'] > 0, final['Poids_Facture'], p_ff)
     final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']
     final['INT Client'] = final.get('Client_T', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
-    final['EXT Client'] = final.get('Client_F', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
+    # EXT Client - Consolidation robuste
+    final['EXT Client'] = final.get('EXT Client_F', final.get('EXT Client', final.get('Client_F', pd.Series(np.nan, index=final.index)))).fillna('').astype(str)
     c_ch = final.get('Chauffeur', pd.Series([np.nan]*len(final)))
     c_ch_t = final.get('Chauffeur_T', pd.Series([np.nan]*len(final)))
     c_ch_f = final.get('Chauffeur_F', pd.Series([np.nan]*len(final)))
@@ -154,6 +206,11 @@ def process_azalys(f_ter, f_fac, provider_name):
     c_im_f = final.get('Immatriculation_F', pd.Series([np.nan]*len(final)))
     final['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace(['nan', 'NAN', 'None'], '')
     final['Activité'] = provider_name; final['Exutoire'] = provider_name
+    
+    # Force format Date pour l'affichage
+    if 'Date_Ref' in final.columns:
+        final['Date'] = pd.to_datetime(final['Date_Ref'], errors='coerce')
+        
     final['Verif_Exutoire'] = np.where(final['_merge'] == 'both', 'OK', 'Pb.Ext')
     final['Verif_Tonnes'] = (abs(final['Ecart']) < 0.05).replace({True:'OK', False:'Pb.T'})
     final['Verif_Matiere'] = "OK"
@@ -253,20 +310,26 @@ def process_valoseine_enc(f_ter, f_fac):
     if 'Num Ticket_F' in final.columns: final['Num Ticket'] = final['Num Ticket_F'].fillna(final.get('Num Ticket_T')).fillna('').astype(str)
     else: final['Num Ticket'] = resolve_col(final, 'Num Ticket').fillna('').astype(str)
     final['Date_Ref'] = resolve_col(final, 'Date_Ref').apply(convertir_date_robuste)
-    p_tt = pd.to_numeric(final.get('Poids_Terrain_T', 0), errors='coerce').fillna(0)
-    final['Poids_Terrain'] = pd.to_numeric(final.get('Poids_Terrain', 0), errors='coerce').fillna(0)
+    p_tt = pd.to_numeric(final.get('Poids_Terrain_T', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
+    final['Poids_Terrain'] = pd.to_numeric(final.get('Poids_Terrain', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
     final['Poids_Terrain'] = np.where(final['Poids_Terrain'] > 0, final['Poids_Terrain'], p_tt)
-    p_ff = pd.to_numeric(final.get('Poids_Facture_F', 0), errors='coerce').fillna(0)
-    final['Poids_Facture'] = pd.to_numeric(final.get('Poids_Facture', 0), errors='coerce').fillna(0)
+    p_ff = pd.to_numeric(final.get('Poids_Facture_F', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
+    final['Poids_Facture'] = pd.to_numeric(final.get('Poids_Facture', pd.Series(0, index=final.index)), errors='coerce').fillna(0)
     final['Poids_Facture'] = np.where(final['Poids_Facture'] > 0, final['Poids_Facture'], p_ff)
     final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']
     final['INT Client'] = final.get('Client_T', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
-    final['EXT Client'] = final.get('Client_F', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
+    # EXT Client - Consolidation robuste
+    final['EXT Client'] = final.get('EXT Client_F', final.get('EXT Client', final.get('Client_F', pd.Series(np.nan, index=final.index)))).fillna('').astype(str)
     c_ch = final.get('Chauffeur', pd.Series([np.nan]*len(final))); c_ch_t = final.get('Chauffeur_T', pd.Series([np.nan]*len(final))); c_ch_f = final.get('Chauffeur_F', pd.Series([np.nan]*len(final)))
     final['Chauffeur'] = c_ch.fillna(c_ch_t).fillna(c_ch_f).astype(str).replace('nan', '')
     c_im = final.get('Immatriculation', pd.Series([np.nan]*len(final))); c_im_t = final.get('Immatriculation_T', pd.Series([np.nan]*len(final))); c_im_f = final.get('Immatriculation_F', pd.Series([np.nan]*len(final)))
     final['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f).astype(str).replace('nan', '')
     final['Activité'] = "ENCOMBRANTS"; final['Exutoire'] = "VALOSEINE ENC GPSEO"
+    
+    # Force format Date pour l'affichage
+    if 'Date_Ref' in final.columns:
+        final['Date'] = pd.to_datetime(final['Date_Ref'], errors='coerce')
+
     final['Verif_Exutoire'] = np.where(final['_merge'] == 'both', 'OK', 'Pb.Ext')
     final['Verif_Tonnes'] = (abs(final['Ecart']) < 0.05).replace({True:'OK', False:'Pb.T'})
     final['Verif_Matiere'] = "OK"

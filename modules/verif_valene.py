@@ -4,7 +4,7 @@ import logging
 import streamlit as st
 import re
 import unicodedata
-from datetime import datetime
+from datetime import datetime, date
 
 # --- LOGGER ---
 logger = logging.getLogger(__name__)
@@ -13,12 +13,40 @@ logger = logging.getLogger(__name__)
 def convertir_date_robuste(val):
     """Imported from main app logic if possible, otherwise fallback"""
     if pd.isna(val) or val == "": return pd.NaT
-    if isinstance(val, (datetime, pd.Timestamp)): return val
-    s = str(val).strip()
-    for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"]:
-        try: return datetime.strptime(s, fmt)
-        except: continue
-    return pd.to_datetime(val, errors='coerce')
+    if isinstance(val, (date, datetime, pd.Timestamp)): 
+        return val.date() if isinstance(val, (pd.Timestamp, datetime)) else val
+    v_str = str(val).strip()
+    
+    # 1. Tentative Excel Serial
+    try:
+        val_num = float(v_str)
+        if val_num > 30000:
+            return pd.to_datetime(val_num, unit='D', origin='1899-12-30').date()
+    except:
+        pass
+
+    # 2. FORMATS ISO
+    if len(v_str) >= 10 and v_str[4] == '-' and v_str[7] == '-' and v_str[0:4].isdigit():
+        try:
+            return datetime.strptime(v_str[:10], "%Y-%m-%d").date()
+        except:
+            pass
+
+    # 3. FORMATS FRANÇAIS STRICTS
+    for fmt in ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y", "%d/%m/%Y %H:%M:%S", "%d-%m-%Y %H:%M:%S"]:
+        try:
+            return datetime.strptime(v_str, fmt).date()
+        except:
+            continue
+            
+    # 4. Fallback Pandas avec dayfirst=True
+    try:
+        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
+        if pd.notna(dt): return dt.date()
+    except:
+        pass
+        
+    return pd.NaT
 
 def normalize_site_key(txt):
     if not txt or pd.isna(txt): return "NAN"
@@ -41,13 +69,29 @@ def normaliser_matiere_valene(m):
 
 def normaliser_matiere_picheta_valoseine(m):
     if not m or pd.isna(m): return ""
+    import unicodedata
     s = str(m).upper().strip()
-    if "GRAVATS" in s: return "GRAVATS"
-    if "DECHETS VERTS" in s or "VERTS" in s: return "DECHETS VERTS"
+    s = unicodedata.normalize('NFKD', s).encode('ASCII', 'ignore').decode('utf-8')
+    v = s.lower()
+    
+    # RAPPEL MAP PICHETA GLOBALE
+    if 'vegetau' in v or 'dve' in v or 'verts' in v:
+        return 'DEPOT VEGETAUX TVA10 - BPU 4.2'
+    if 'carton' in v:
+        return 'DEPOT PAPIER CARTON TVA0 - BPU 4.7'
+    if 'gravat' in v:
+        return 'DEPOT GRAVAT CHANTIER TVA10 - BPU 4.1'
+    if 'platre' in v:
+        return 'DEPOT PLATRE TVA5.5 - BPU 4.8'
+    if 'ferraille' in v:
+        return 'DEPOT FERRAILLE TVA0 - BPU 4.6'
+    
+    # SPECIFIC MAPPINGS FOR VALOSEINE IF ANY (fallback)
     if "BOIS" in s: return "BOIS"
     if "ENCOMBRANTS" in s: return "DIB"
     if "TOUT VENANT" in s: return "TOUT VENANT"
-    return s
+    
+    return str(m)
 
 def resolve_col(df, base_name):
     """Helper to find a column even if it was renamed with _T or _F suffixes"""
@@ -81,12 +125,14 @@ def charger_valene(f, source):
             if "poids" in cl and "tonnes" in cl: cols[c] = "Poids_Terrain"
             if "poids net" in cl: cols[c] = "Poids_KG"
             if "matière" in cl or "description" in cl: cols[c] = "Matiere_T"
-            if "date" in cl: cols[c] = "Date_Ref"
+            if cl in ["date", "le", "journee"]: cols[c] = "Date_Ref"
+            elif "date" in cl: cols[c] = "Date_Ref"
             if "client" in cl: cols[c] = "Client"
             if "bon" in cl: cols[c] = "Num Bon"
             if "chauffeur" in cl or "conducteur" in cl: cols[c] = "Chauffeur"
             if "immat" in cl or "véhicule" in cl: cols[c] = "Immatriculation"
         df = df.rename(columns=cols)
+        df = df.loc[:, ~df.columns.duplicated()]
         if "Poids_KG" in df.columns: df["Poids_Terrain"] = pd.to_numeric(df["Poids_KG"], errors='coerce') / 1000
         if "Matiere_T" in df.columns:
              mask_mat = df["Matiere_T"].astype(str).str.contains("total|récap", case=False, na=False)
@@ -287,39 +333,59 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
     merged = pd.concat([match1, match2, match3, final_orph_t, final_orph_f], ignore_index=True)
     # ----------------------------------------
     
+    # ----------------------------------------
+    
+    # 4. Resolution of key columns before verification
+    # This ensures that even orphans (Pb.EXT) have their data (INT Client, EXT Client, Matiere) populated
+    
+    # Resolution of Client
+    final_int_c = resolve_col(merged, 'INT Client')
+    final_ext_c = resolve_col(merged, 'EXT Client')
+    # Fallbacks from original Client columns
+    c_cl_t = merged.get('Client_T', pd.Series([np.nan]*len(merged)))
+    c_cl_f = merged.get('Client_F', pd.Series([np.nan]*len(merged)))
+    
+    merged['INT Client'] = final_int_c.fillna(c_cl_t).fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
+    merged['EXT Client'] = final_ext_c.fillna(c_cl_f).fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
+    
+    # Resolution of Matiere
+    final_mat_t = resolve_col(merged, 'Matiere_T')
+    final_mat_f = resolve_col(merged, 'EXT_Matiere')
+    # Use resolve_col for EXT_Matiere_Norm as well
+    final_mat_f_norm = resolve_col(merged, 'EXT_Matiere_Norm')
+    
+    merged['Matiere_T'] = final_mat_t.fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
+    merged['EXT_Matiere'] = final_mat_f.fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
+    merged['EXT_Matiere_Norm'] = final_mat_f_norm.fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
+
+    # Resolution of Num Ticket and Date
     if 'Num Ticket_F' in merged.columns:
         merged['Num Ticket'] = merged['Num Ticket_F'].fillna(merged.get('Num Ticket_T')).fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
     else:
         merged['Num Ticket'] = resolve_col(merged, 'Num Ticket').fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
 
-    c_cl = merged.get('Client', pd.Series([np.nan]*len(merged)))
-    c_cl_t = merged.get('Client_T', pd.Series([np.nan]*len(merged)))
-    c_cl_f = merged.get('Client_F', pd.Series([np.nan]*len(merged)))
-    merged['Client'] = c_cl.fillna(c_cl_t).fillna(c_cl_f)
-
-    c_dt = merged.get('Date_Ref', pd.Series([np.nan]*len(merged)))
     c_dt_t = merged.get('Date_Ref_T', pd.Series([np.nan]*len(merged)))
     c_dt_f = merged.get('Date_Ref_F', pd.Series([np.nan]*len(merged)))
-    merged['Date_Ref'] = c_dt.fillna(c_dt_t).fillna(c_dt_f)
+    merged['Date_Ref'] = resolve_col(merged, 'Date_Ref').fillna(c_dt_t).fillna(c_dt_f)
 
-    c_ch = merged.get('Chauffeur', pd.Series([np.nan]*len(merged)))
+    # Resolution of other metadata
     c_ch_t = merged.get('Chauffeur_T', pd.Series([np.nan]*len(merged)))
     c_ch_f = merged.get('Chauffeur_F', pd.Series([np.nan]*len(merged)))
-    merged['Chauffeur'] = c_ch.fillna(c_ch_t).fillna(c_ch_f)
+    merged['Chauffeur'] = resolve_col(merged, 'Chauffeur').fillna(c_ch_t).fillna(c_ch_f)
 
-    c_im = merged.get('Immatriculation', pd.Series([np.nan]*len(merged)))
     c_im_t = merged.get('Immatriculation_T', pd.Series([np.nan]*len(merged)))
     c_im_f = merged.get('Immatriculation_F', pd.Series([np.nan]*len(merged)))
-    merged['Immatriculation'] = c_im.fillna(c_im_t).fillna(c_im_f)
+    merged['Immatriculation'] = resolve_col(merged, 'Immatriculation').fillna(c_im_t).fillna(c_im_f)
     
     merged['Exutoire'] = "VALENE"
     
+    # Resolution of Weights
     p_ter_t = pd.to_numeric(merged.get('Poids_Terrain_T', 0), errors='coerce').fillna(0)
-    merged['Poids_Terrain'] = pd.to_numeric(merged.get('Poids_Terrain', 0), errors='coerce').fillna(0)
+    merged['Poids_Terrain'] = pd.to_numeric(resolve_col(merged, 'Poids_Terrain'), errors='coerce').fillna(0)
     merged['Poids_Terrain'] = np.where(merged['Poids_Terrain'] > 0, merged['Poids_Terrain'], p_ter_t)
 
     p_fac_f = pd.to_numeric(merged.get('Poids_Facture_F', 0), errors='coerce').fillna(0)
-    merged['Poids_Facture'] = pd.to_numeric(merged.get('Poids_Facture', 0), errors='coerce').fillna(0)
+    merged['Poids_Facture'] = pd.to_numeric(resolve_col(merged, 'Poids_Facture'), errors='coerce').fillna(0)
     merged['Poids_Facture'] = np.where(merged['Poids_Facture'] > 0, merged['Poids_Facture'], p_fac_f)
 
     merged['Poids_Terrain'] = np.floor(merged['Poids_Terrain'] * 100) / 100
@@ -329,28 +395,37 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
     merged['Poids_Facture'] = np.where(merged['Poids_Facture'] >= 99, 0, merged['Poids_Facture'])
     
     merged['Ecart'] = merged['Poids_Terrain'] - merged['Poids_Facture']
-    merged['INT Client'] = merged.get('Client_T', merged.get('Client', '')).fillna('')
-    merged['EXT Client'] = merged.get('Client_F', '').fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
     
     merged['Verif_Exutoire'] = np.where(merged['_merge'] == 'both', 'OK', 'Pb.Ext')
     merged['Verif_Matiere'] = (merged['Matiere_T'] == merged['EXT_Matiere_Norm']).replace({True:'OK', False:'Pb.Mat'})
     merged['Verif_Tonnes'] = (abs(merged['Ecart']) < 0.005).replace({True:'OK', False:'Pb.T'})
     
+    # Handle GPSEO variations
     merged['INT Client'] = merged['INT Client'].astype(str).replace(['CU GPSO', 'GPSO'], 'GPSEO').replace(['nan', 'NAN', 'None'], '')
-    merged['Client'] = merged['Client'].astype(str).replace(['CU GPSO', 'GPSO'], 'GPSEO')
+    merged['Client'] = merged['INT Client'].copy() # Re-sync Client with INT Client
 
     def verif_client(row):
-        c_int = str(row.get('INT Client', '')).upper().strip(); c_ext = str(row.get('EXT Client', '')).upper().strip(); act = str(row.get('Activité', '')).upper()
+        c_int = str(row.get('INT Client', '')).upper().strip()
+        c_ext = str(row.get('EXT Client', '')).upper().strip()
+        act = str(row.get('Activité', '')).upper()
         if not c_int or not c_ext: return "OK"
         if "SOTREMA2" in act:
             if "GPSEO" not in c_int: return "OK"
-        if c_int in ["GPSEO", "CCPIF"] and "CU GRAND PARIS SEINE ET OISE" in c_ext: return "OK"
-        if "CU GRAND PARIS SEINE ET OISE" in c_ext and c_int in ["GPSEO", "CCPIF"]: return "OK"
+        
+        # Extended match for GPSEO
+        if c_int in ["GPSEO", "CCPIF"]:
+            if any(k in c_ext for k in ["GRAND PARIS SEINE ET OISE", "CU GPSO", "GPSO"]):
+                return "OK"
+                
         if c_int in c_ext or c_ext in c_int: return "OK"
         return "Pb.Clt"
+
     merged['Verif_Client'] = merged.apply(verif_client, axis=1)
+    
     if 'Date' in merged.columns: merged = merged.drop(columns=['Date'])
-    merged = merged.rename(columns={'Date_Ref': 'Date'}); cols_final = ['Date', 'Exutoire', 'Client', 'INT Client', 'EXT Client', 'Activité', 'Num Ticket', 'Num Bon', 'Chauffeur', 'Immatriculation', 'EXT_Matiere', 'Matiere_T', 'Verif_Tonnes', 'Verif_Matiere', 'Verif_Exutoire', 'Verif_Client', 'Poids_Terrain', 'Poids_Facture', 'Ecart']
+    merged = merged.rename(columns={'Date_Ref': 'Date'})
+    
+    cols_final = ['Date', 'Exutoire', 'Client', 'INT Client', 'EXT Client', 'Activité', 'Num Ticket', 'Num Bon', 'Chauffeur', 'Immatriculation', 'EXT_Matiere', 'Matiere_T', 'Verif_Tonnes', 'Verif_Matiere', 'Verif_Exutoire', 'Verif_Client', 'Poids_Terrain', 'Poids_Facture', 'Ecart']
     for c in cols_final:
         if c not in merged.columns: merged[c] = ""
     if 'Num Bon' in merged.columns: merged['Num Bon'] = merged['Num Bon'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')
@@ -363,7 +438,7 @@ def charger_valoseine(f):
         temp = pd.read_excel(f, header=None, nrows=20)
         best_idx = 0
         max_score = 0
-        keywords = ['ticket', 'tp manuel', 'bon', 'tonnages', 'date', 'immatriculation', 'chauffeur']
+        keywords = ['ticket', 'tp manuel', 'bon', 'tonnages', 'date', 'immatriculation', 'chauffeur', 'le', 'journee']
         
         for i, r in temp.iterrows():
             row_str = str(r.values).lower()
@@ -384,12 +459,14 @@ def charger_valoseine(f):
             elif "num bon" in cl: cols[c] = "Num Bon"
             elif "tonnages" in cl: cols[c] = "Poids_Terrain"
             elif "description" in cl: cols[c] = "Matiere_T"
+            elif cl in ["date", "le", "journee"]: cols[c] = "Date_Ref"
             elif "date" in cl: cols[c] = "Date_Ref"
             elif "nchantier" in cl: cols[c] = "Client"
             elif "immatriculation" in cl: cols[c] = "Immatriculation"
             elif "chauffeur" in cl: cols[c] = "Chauffeur"
             
         df = df.rename(columns=cols)
+        df = df.loc[:, ~df.columns.duplicated()]
         
         if "Poids_Terrain" in df.columns:
             df["Poids_Terrain"] = pd.to_numeric(df["Poids_Terrain"], errors='coerce')
@@ -455,7 +532,27 @@ def process_valoseine(f_ter, f_fac):
             df_ref = df_ref[mask_valid]
 
     df_ref = df_ref.rename(columns=cols_ref)
+    df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
+
+    # Gestion des RUPTURES (Code Adresse: ...)
+    def extract_rupture(row):
+        for v in row:
+            s = str(v).strip()
+            if s.lower().startswith("code adresse:"):
+                return s.split(":", 1)[1].strip()
+        return np.nan
+    df_ref['_rupture'] = df_ref.apply(extract_rupture, axis=1)
+    df_ref['_rupture'] = df_ref['_rupture'].ffill()
     
+    if 'TEMP_CodeAdresse' in df_ref.columns:
+        df_ref['EXT Client'] = df_ref['TEMP_CodeAdresse'].replace(['', 'nan', 'NAN', 'None'], np.nan).fillna(df_ref['_rupture'])
+    else:
+        df_ref['EXT Client'] = df_ref['_rupture']
+    
+    # Suppression des lignes de rupture
+    mask_rupture = df_ref.apply(lambda r: any("code adresse:" in str(v).lower() for v in r), axis=1)
+    df_ref = df_ref[~mask_rupture].copy()
+
     if "Poids_Facture" in df_ref.columns:
         df_ref["Poids_Facture"] = df_ref["Poids_Facture"].astype(str).str.replace(',', '.')
         df_ref["Poids_Facture"] = pd.to_numeric(df_ref["Poids_Facture"], errors='coerce')

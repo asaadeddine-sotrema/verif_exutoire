@@ -219,36 +219,41 @@ def nettoyer_texte(texte):
     """
 def convertir_date_robuste(val):
     if pd.isna(val) or val == "": return pd.NaT
-    if isinstance(val, (pd.Timestamp, datetime.date)): 
+    if isinstance(val, (datetime.date, pd.Timestamp)): 
         return val.date() if isinstance(val, pd.Timestamp) else val
     
     v_str = str(val).strip()
     
-    # [USER REQUEST] STRICT FRENCH PARSING (DD/MM/YYYY)
-    # On force dayfirst=True pour lire d'abord le JOUR, puis le MOIS.
-    # Ex: 04/02/2026 -> 4 Février (et non 2 Avril)
+    # 1. Tentative Excel Serial (si numérique)
     try:
-        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
-        if pd.notna(dt):
-            return dt.date()
+        val_num = float(v_str)
+        if val_num > 30000:
+            return pd.to_datetime(val_num, unit='D', origin='1899-12-30').date()
     except:
         pass
 
-    # 2. Fallback manuel (Jour / Mois / Année)
-    separators = ['/', '-', '.']
-    for sep in separators:
-        if sep in v_str:
-            parts = v_str.split(sep)
-            if len(parts) >= 3:
-                try:
-                    # STANDARD : d = parts[0], m = parts[1]
-                    d = int(parts[0])
-                    m = int(parts[1])
-                    y = int(parts[2].split()[0]) # Gère '2026 00:00:00'
-                    if y < 100: y += 2000
-                    return datetime.date(y, m, d)
-                except: continue
-    
+    # 2. FORMATS ISO (venant de read_excel avec dtype=str)
+    if len(v_str) >= 10 and v_str[4] == '-' and v_str[7] == '-' and v_str[0:4].isdigit():
+        try:
+            return datetime.datetime.strptime(v_str[:10], "%Y-%m-%d").date()
+        except:
+            pass
+
+    # 3. FORMATS FRANÇAIS STRICTS (pour éviter l'inversion Jour/Mois)
+    # On teste d'abord les formats les plus probables avec le JOUR en premier.
+    for fmt in ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y", "%d/%m/%Y %H:%M:%S", "%d-%m-%Y %H:%M:%S"]:
+        try:
+            return datetime.datetime.strptime(v_str, fmt).date()
+        except:
+            continue
+            
+    # 4. Fallback Pandas avec dayfirst=True
+    try:
+        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
+        if pd.notna(dt): return dt.date()
+    except:
+        pass
+        
     return pd.NaT
 
 
@@ -622,7 +627,7 @@ def display_results(df):
 
     st.write(f"Résultat : {len(df)} lignes traitées.")
     
-    cols_view = ['Date_Ref', 'Date', 'Num Ticket', 'Exutoire', 'Client', 'Methode', 'Verif_Exutoire', 'Poids_Terrain', 'Poids_Facture', 'Ecart', 'INT Client', 'EXT Client', 'Verif_Client']
+    cols_view = ['Date_Ref', 'Date', 'Num Ticket', 'Exutoire', 'Methode', 'Verif_Exutoire', 'Poids_Terrain', 'Poids_Facture', 'Ecart', 'INT Client', 'EXT Client', 'Verif_Client', 'Matiere_T', 'EXT_Matiere', 'Verif_Matiere']
     cols_view = [c for c in cols_view if c in df.columns]
     
     col_config = {}
@@ -959,29 +964,38 @@ def interface_dashboard():
 
         c_exu, c_tick, c_bon = st.columns(3)
         
+        # Filtres dynamiques basés sur la sélection de la date
+        df_opts_dynamic = df_filtered_date.copy()
+
         with c_exu:
-            exutoires = ["Tous"] + sorted(df_global_opts['Exutoire'].dropna().unique().tolist())
-            # Sanitize default
+            exutoires = ["Tous"] + sorted(df_opts_dynamic['Exutoire'].dropna().unique().tolist())
             valid_defaults = [x for x in st.session_state["p_exutoire"] if x in exutoires]
             st.session_state["p_exutoire"] = valid_defaults
             choix_exutoire = st.multiselect("1. Exutoire", exutoires, placeholder="Choisir...", key="w_exutoire", default=st.session_state["p_exutoire"], on_change=sync_exutoire)
 
-        # Création d'un dataset filtré "Dynamique" pour les autres dropdowns
-        # Cela permet d'avoir des listes de clients/matières cohérentes avec l'exutoire choisi
-        df_opts_dynamic = df_global_opts.copy()
         if choix_exutoire and "Tous" not in choix_exutoire:
             df_opts_dynamic = df_opts_dynamic[df_opts_dynamic['Exutoire'].isin(choix_exutoire)]
 
         with c_tick: search_ticket = st.text_input("Num Ticket", key="w_search_ticket", value=st.session_state["p_search_ticket"], on_change=sync_ticket)
         with c_bon: search_bon = st.text_input("Num Bon", key="w_search_bon", value=st.session_state["p_search_bon"], on_change=sync_bon)
 
-        c_cli, c_mat, c_act = st.columns(3)
+        c_act, c_cli, c_mat = st.columns(3)
         
+        with c_act:
+            activites_dispo = ["Tous"] + sorted(df_opts_dynamic['Activité'].fillna("").unique().tolist())
+            valid_defaults_act = [x for x in st.session_state["p_activite"] if x in activites_dispo]
+            st.session_state["p_activite"] = valid_defaults_act
+            choix_activite = st.multiselect("2. Activité", activites_dispo, placeholder="Filtrer...", key="w_activite", default=st.session_state["p_activite"], on_change=sync_activite)
+
+        # Apply activity filter to dynamic options before building client & material lists
+        if choix_activite and "Tous" not in choix_activite:
+            df_opts_dynamic = df_opts_dynamic[df_opts_dynamic['Activité'].astype(str).isin(choix_activite)]
+
         with c_cli:
             clients_dispo = ["Tous"] + sorted(df_opts_dynamic['INT Client'].astype(str).unique().tolist())
             valid_defaults_cli = [x for x in st.session_state["p_client"] if x in clients_dispo]
             st.session_state["p_client"] = valid_defaults_cli
-            choix_client = st.multiselect("2. Client", clients_dispo, placeholder="Filtrer...", key="w_client", default=st.session_state["p_client"], on_change=sync_client)
+            choix_client = st.multiselect("3. Client", clients_dispo, placeholder="Filtrer...", key="w_client", default=st.session_state["p_client"], on_change=sync_client)
             
         with c_mat:
             m_ext = df_opts_dynamic['EXT_Matiere'].dropna().unique().tolist()
@@ -989,13 +1003,7 @@ def interface_dashboard():
             matieres_dispo = ["Tous"] + sorted(list(set(m_ext + m_int)))
             valid_defaults_mat = [x for x in st.session_state["p_matiere"] if x in matieres_dispo]
             st.session_state["p_matiere"] = valid_defaults_mat
-            choix_matiere = st.multiselect("3. Matière", matieres_dispo, placeholder="Filtrer...", key="w_matiere", default=st.session_state["p_matiere"], on_change=sync_matiere)
-            
-        with c_act:
-            activites_dispo = ["Tous"] + sorted(df_opts_dynamic['Activité'].fillna("").unique().tolist())
-            valid_defaults_act = [x for x in st.session_state["p_activite"] if x in activites_dispo]
-            st.session_state["p_activite"] = valid_defaults_act
-            choix_activite = st.multiselect("4. Activité", activites_dispo, placeholder="Filtrer...", key="w_activite", default=st.session_state["p_activite"], on_change=sync_activite)
+            choix_matiere = st.multiselect("4. Matière", matieres_dispo, placeholder="Filtrer...", key="w_matiere", default=st.session_state["p_matiere"], on_change=sync_matiere)
 
     df_final = df_filtered_date.copy()
 
@@ -1004,6 +1012,7 @@ def interface_dashboard():
     
     if choix_client and "Tous" not in choix_client:
         df_final = df_final[df_final['INT Client'].astype(str).isin(choix_client)]
+
         
     if choix_matiere and "Tous" not in choix_matiere:
         mask_mat = (df_final['EXT_Matiere'].astype(str).isin(choix_matiere)) | \

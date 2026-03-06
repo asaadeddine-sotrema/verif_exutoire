@@ -13,12 +13,40 @@ logger = logging.getLogger(__name__)
 
 def convertir_date_robuste(val):
     if pd.isna(val) or val == "": return pd.NaT
-    if isinstance(val, (datetime, pd.Timestamp)): return val
-    s = str(val).strip()
-    for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"]:
-        try: return datetime.strptime(s, fmt)
-        except: continue
-    return pd.to_datetime(val, errors='coerce')
+    if isinstance(val, (datetime, pd.Timestamp)): 
+        return val.date() if isinstance(val, (pd.Timestamp, datetime)) else val
+    v_str = str(val).strip()
+    
+    # 1. Tentative Excel Serial
+    try:
+        val_num = float(v_str)
+        if val_num > 30000:
+            return pd.to_datetime(val_num, unit='D', origin='1899-12-30').date()
+    except:
+        pass
+
+    # 2. FORMATS ISO
+    if len(v_str) >= 10 and v_str[4] == '-' and v_str[7] == '-' and v_str[0:4].isdigit():
+        try:
+            return datetime.strptime(v_str[:10], "%Y-%m-%d").date()
+        except:
+            pass
+
+    # 3. FORMATS FRANÇAIS STRICTS
+    for fmt in ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y", "%d/%m/%Y %H:%M:%S", "%d-%m-%Y %H:%M:%S"]:
+        try:
+            return datetime.strptime(v_str, fmt).date()
+        except:
+            continue
+            
+    # 4. Fallback Pandas avec dayfirst=True
+    try:
+        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
+        if pd.notna(dt): return dt.date()
+    except:
+        pass
+        
+    return pd.NaT
 
 def normalize_site_key(txt):
     if not txt or pd.isna(txt): return "NAN"
@@ -36,13 +64,26 @@ def check_site_keys(row):
     return not s1.isdisjoint(s2)
 
 def resolve_col(df, base_name):
-    if base_name in df.columns: return df[base_name]
+    res = df.get(base_name, pd.Series(np.nan, index=df.index))
     ct, cf = f"{base_name}_T", f"{base_name}_F"
-    if ct in df.columns and cf in df.columns:
-        return df[ct].fillna(df[cf])
-    if ct in df.columns: return df[ct]
-    if cf in df.columns: return df[cf]
-    return pd.Series([np.nan]*len(df))
+    if ct in df.columns:
+        res = res.fillna(df[ct])
+    if cf in df.columns:
+        res = res.fillna(df[cf])
+    return res
+
+def resolve_multi(df, candidates):
+    res = pd.Series(np.nan, index=df.index)
+    for cand in candidates:
+        for suffix in ['', '_T', '_F']:
+            name = f"{cand}{suffix}"
+            if name in df.columns:
+                # Convert empty strings and other null-like values to NaN before fillna
+                clean_col = df[name].copy()
+                if clean_col.dtype == object:
+                    clean_col = clean_col.replace(r'^\s*$', np.nan, regex=True).replace(['nan', 'NAN', 'None', 'None'], np.nan)
+                res = res.fillna(clean_col)
+    return res
 
 def normaliser_matiere_dupille(val):
     if pd.isna(val): return ""
@@ -83,11 +124,13 @@ def charger_dupille(f):
             if "num ticket" in cl:
                 if "2" in cl: cols[c] = "Num Ticket 2"
                 else: cols[c] = "Num Ticket"
-            if "nchantier" in cl: cols[c] = "Client"
+            if "nchantier" in cl: cols[c] = "INT Client"
             if "poids" in cl or "tonnes" in cl: cols[c] = "Poids_Terrain"
-            if "date" in cl and "jour" not in cl: cols[c] = "Date_Ref"
+            if cl in ["date", "le", "journee", "journée"]: cols[c] = "Date_Ref"
+            elif "date" in cl and "jour" not in cl: cols[c] = "Date_Ref"
         df = df.rename(columns=cols)
-        for txt_col in ["Num Ticket", "Num Ticket 2", "Client", "Chauffeur", "Immatriculation", "Matiere_T", "Num Bon"]:
+        df = df.loc[:, ~df.columns.duplicated()]
+        for txt_col in ["Num Ticket", "Num Ticket 2", "INT Client", "Chauffeur", "Immatriculation", "Matiere_T", "Num Bon"]:
             if txt_col in df.columns:
                 df[txt_col] = df[txt_col].astype(str).replace('nan', '')
         if "Poids_Terrain" in df.columns:
@@ -146,20 +189,18 @@ def process_dupille(f_lb, f_fac):
     for c in df_fac.columns:
         cl = str(c).lower().strip()
         if "ticket" in cl or cl == "id": nc[c] = "Num Ticket"
-        elif "net" in cl: nc[c] = "Poids_Facture" 
-        elif "poids" in cl and "facture" in cl: nc[c] = "Poids_Facture"
-        elif "zone" in cl or "lib_zone" in cl: nc[c] = "Client"
+        elif "net" in cl or ("poids" in cl and "facture" in cl): nc[c] = "Poids_Facture" 
+        elif "zone" in cl or "lib_zone" in cl: nc[c] = "EXT Client"
         elif "client" in cl or "lib_client" in cl: nc[c] = "Ref_Client"
-        elif "code matière" in cl or "lib_produit" in cl: nc[c] = "EXT_Matiere"
-        elif "matière" in cl or "produit" in cl: nc[c] = "EXT_Matiere"
+        elif "code matière" in cl or "lib_produit" in cl or "matière" in cl or "produit" in cl: nc[c] = "EXT_Matiere"
         elif "immatriculation" in cl or "véhicule" in cl: nc[c] = "Immatriculation"
         elif "transporteur" in cl or "lib_transporteur" in cl: nc[c] = "Transporteur"
-        elif "bordereau" in cl or "bon de" in cl or (cl.startswith("n") and cl.endswith("bon")): nc[c] = "Num Bon"
-        elif "n° bon" in cl or "num bon" in cl or "bon n" in cl: nc[c] = "Num Bon"
-        elif "date" in cl or "dates" in cl: nc[c] = "Date_Ref"
+        elif "bordereau" in cl or "bon de" in cl or (cl.startswith("n") and cl.endswith("bon")) or "n° bon" in cl or "num bon" in cl or "bon n" in cl: nc[c] = "Num Bon"
+        elif "date" in cl or "dates" in cl or cl in ["le", "journee", "journée"]: nc[c] = "Date_Ref"
         elif "original_sheet_name" in cl: nc[c] = "Activité"
     df_fac = df_fac.rename(columns=nc)
-    target_names = ["Num Ticket", "Poids_Facture", "Client", "EXT_Matiere", "Immatriculation", "Transporteur", "Date_Ref", "Num Bon", "Activité"]
+    df_fac = df_fac.loc[:, ~df_fac.columns.duplicated()]
+    target_names = ["Num Ticket", "Poids_Facture", "Client", "EXT Client", "EXT_Matiere", "Immatriculation", "Transporteur", "Date_Ref", "Num Bon", "Activité"]
     for target in target_names:
         cols_indices = [j for j, name in enumerate(df_fac.columns) if name == target]
         if len(cols_indices) > 1:
@@ -167,9 +208,9 @@ def process_dupille(f_lb, f_fac):
             for idx in cols_indices[1:]: combined = combined.fillna(df_fac.iloc[:, idx])
             df_fac = df_fac.loc[:, df_fac.columns != target].copy()
             df_fac[target] = combined
-    if "Client" in df_fac.columns:
-        df_fac['Client'] = df_fac['Client'].astype(str).str.upper()
-        df_fac = df_fac[~df_fac['Client'].str.contains(r"DECHETTERIE PROFESSION+EL", regex=True, na=False)]
+    if "EXT Client" in df_fac.columns:
+        df_fac['EXT Client'] = df_fac['EXT Client'].astype(str).str.upper()
+        df_fac = df_fac[~df_fac['EXT Client'].str.contains(r"DECHETTERIE PROFESSION+EL", regex=True, na=False)]
     if "Transporteur" in df_fac.columns:
         df_fac['Transporteur'] = df_fac['Transporteur'].astype(str).str.upper()
         df_fac = df_fac[df_fac['Transporteur'].str.contains("SOTREMA", na=False)]
@@ -178,7 +219,7 @@ def process_dupille(f_lb, f_fac):
         if p.mean() > 50: p = p / 1000.0
         df_fac["Poids_Facture"] = p
     if 'Date_Ref' in df_fac.columns: df_fac['Date_Ref'] = df_fac['Date_Ref'].apply(convertir_date_robuste)
-    if 'Client' in df_fac.columns: df_fac['Client'] = df_fac['Client'].apply(normaliser_client_dupille)
+    if 'EXT Client' in df_fac.columns: df_fac['EXT Client'] = df_fac['EXT Client'].apply(normaliser_client_dupille)
     if 'EXT_Matiere' in df_fac.columns: df_fac['EXT_Matiere'] = df_fac['EXT_Matiere'].apply(normaliser_matiere_dupille)
     if 'Activité' not in df_fac.columns: df_fac['Activité'] = 'DUPILLE_FAC'
     if 'Num Ticket' in df_fac.columns: df_fac['Num Ticket'] = df_fac['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace(['nan', 'None', '', 'NAN'], np.nan)
@@ -203,6 +244,7 @@ def process_dupille(f_lb, f_fac):
 
     def aggregate_dupille_df(df, type_suffix):
         if 'Num Bon' not in df.columns: return df
+        df = df.loc[:, ~df.columns.duplicated()].copy()
         df['AGG_BON'] = df['Num Bon'].astype(str).str.strip().str.upper().str.lstrip('0').replace(['NAN', '', 'NONE'], np.nan)
         mask_bon = df['AGG_BON'].notna(); df_to_agg = df[mask_bon].copy(); df_rest = df[~mask_bon].copy()
         if df_to_agg.empty: return df
@@ -255,24 +297,23 @@ def process_dupille(f_lb, f_fac):
     orph_f = l_ref.rename(columns={c: c + '_F' for c in df_fac.columns}); orph_f['_merge'] = 'right_only'; orph_f['Methode'] = 'Non Trouvé'
     final = pd.concat([match1, match2, match3_smart, orph_t, orph_f], ignore_index=True)
     final['Exutoire'] = "DUPILLE"
-    if 'Num Ticket_F' in final.columns:
-        t_id = final['Num Ticket_T']
-        if 'Num Ticket 2_T' in final.columns: t_id = t_id.fillna(final['Num Ticket 2_T'])
-        final['Num Ticket'] = t_id.fillna(final.get('Num Ticket_F')).fillna('').astype(str)
-    else: final['Num Ticket'] = resolve_col(final, 'Num Ticket').fillna('').astype(str)
-    final['Num Bon'] = resolve_col(final, 'Num Bon'); final['Date_Ref'] = resolve_col(final, 'Date_Ref')
-    p_t = pd.Series(np.nan, index=final.index)
-    if 'Poids_Terrain' in final.columns: p_t = p_t.fillna(final['Poids_Terrain'])
-    if 'Poids_Terrain_T' in final.columns: p_t = p_t.fillna(final['Poids_Terrain_T'])
-    final['Poids_Terrain'] = pd.to_numeric(p_t, errors='coerce').fillna(0)
-    p_f = pd.Series(np.nan, index=final.index)
-    if 'Poids_Facture' in final.columns: p_f = p_f.fillna(final['Poids_Facture'])
-    if 'Poids_Facture_F' in final.columns: p_f = p_f.fillna(final['Poids_Facture_F'])
-    final['Poids_Facture'] = pd.to_numeric(p_f, errors='coerce').fillna(0); final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']
-    final['INT Client'] = final.get('Client_T', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
-    final['EXT Client'] = final.get('Client_F', pd.Series(np.nan, index=final.index)).fillna('').astype(str)
-    final['Matiere_T'] = resolve_col(final, 'Matiere_T'); final['EXT_Matiere'] = resolve_col(final, 'EXT_Matiere')
-    final['Activité'] = final.get('Activité_F', pd.Series(np.nan, index=final.index)).fillna(final.get('Activité', pd.Series(np.nan, index=final.index))).fillna(final.get('Activité_T', pd.Series(np.nan, index=final.index))).fillna("DECH_DUPILLE")
+    final['Num Ticket'] = resolve_multi(final, ["Num Ticket", "Num Ticket 2"]).fillna('').astype(str)
+    final['Num Bon'] = resolve_multi(final, ["Num Bon"]).fillna('').astype(str)
+    final['Date_Ref'] = resolve_multi(final, ["Date_Ref"]).fillna(pd.NaT)
+    
+    p_t = pd.to_numeric(resolve_multi(final, ["Poids_Terrain"]), errors='coerce').fillna(0)
+    final['Poids_Terrain'] = p_t
+    p_f = pd.to_numeric(resolve_multi(final, ["Poids_Facture"]), errors='coerce').fillna(0)
+    final['Poids_Facture'] = p_f
+    
+    final['Ecart'] = final['Poids_Terrain'] - final['Poids_Facture']
+
+    final['INT Client'] = resolve_multi(final, ["INT Client", "Tournée modèle", "Client"]).fillna('').astype(str)
+    final['EXT Client'] = resolve_multi(final, ["EXT Client", "Client", "Ref_Client"]).fillna('').astype(str)
+    final['Matiere_T'] = resolve_multi(final, ["Matiere_T"]).fillna('').astype(str)
+    final['EXT_Matiere'] = resolve_multi(final, ["EXT_Matiere", "Matiere"]).fillna('').astype(str)
+
+    final['Activité'] = resolve_multi(final, ["Activité"]).fillna("DECH_DUPILLE").astype(str)
     c_ch = final.get('Chauffeur', pd.Series([np.nan]*len(final))); c_ch_t = final.get('Chauffeur_T', pd.Series([np.nan]*len(final))); c_ch_f = final.get('Chauffeur_F', pd.Series([np.nan]*len(final)))
     final['Chauffeur'] = c_ch.fillna(c_ch_t).fillna(c_ch_f).astype(str).replace(['nan', 'NAN', 'None'], '')
     c_im = final.get('Immatriculation', pd.Series([np.nan]*len(final))); c_im_t = final.get('Immatriculation_T', pd.Series([np.nan]*len(final))); c_im_f = final.get('Immatriculation_F', pd.Series([np.nan]*len(final)))
@@ -282,8 +323,10 @@ def process_dupille(f_lb, f_fac):
     final['Verif_Exutoire'] = np.where(final['_merge'] == 'both', 'OK', 'Pb.Ext')
     
     def check_mat_dupille(row):
-        if row['_merge'] != 'both': return ''
         m_t = str(row.get('Matiere_T', '')).upper().strip(); m_f = str(row.get('EXT_Matiere', '')).upper().strip()
+        if row['_merge'] == 'left_only': return 'Pb.Mat' if m_t in ['', 'NAN'] else ''
+        if row['_merge'] == 'right_only': return 'Pb.Mat' if m_f in ['', 'NAN'] else ''
+        if row['_merge'] != 'both': return ''
         if not m_t or m_t == 'NAN': return 'Pb.Mat'
         if m_t == m_f or m_t in m_f or m_f in m_t: return 'OK'
         return 'Pb.Mat'

@@ -712,3 +712,29 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-03-03 16:14:52,681 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-03-03 16:16:23,672 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-03-04 09:10:26 - INFO - [System] - Connexion réussie: admin
+2026-03-04 11:20:44 - INFO - [System] - Connexion réussie: ilemaistre
+2026-03-04 16:32:45 - INFO - [None] - Connexion réussie: ilemaistre
+2026-03-05 10:18:43 - INFO - [System] - Connexion réussie: admin
+2026-03-05 10:18:43 - ERROR - [admin] - Erreur Migration : (psycopg2.OperationalError) SSL connection has been closed unexpectedly
+
+[SQL: SELECT column_name FROM information_schema.columns WHERE table_name = 'verif_tonnage_historique' AND column_name = 'isActive']
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2026-03-05 11:38:34 - INFO - [System] - Connexion réussie: ilemaistre
+2026-03-05 12:15:47 - INFO - [System] - Connexion réussie: ilemaistre
+2026-03-05 12:34:15 - INFO - [System] - Connexion réussie: admin
+2026-03-05 14:24:29 - INFO - [System] - Connexion réussie: admin
+2026-03-05 14:45:07 - INFO - [System] - Connexion réussie: admin
+2026-03-05 15:23:09 - INFO - [System] - Connexion réussie: ilemaistre
+2026-03-05 15:24:58,610 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-05 16:04:46 - INFO - [System] - Connexion réussie: ilemaistre
+2026-03-06 09:05:08 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-03-06 09:05:13 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-03-06 09:05:24 - INFO - [System] - Connexion réussie: admin
+2026-03-06 09:52:35,060 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 10:09:23,957 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 10:14:49,522 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 10:15:12,735 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 10:35:40 - ERROR - [System] - Erreur d'importation de verif_ecorec_ui : 'modules.verif_ecorec_ui'
+2026-03-06 10:37:48,390 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 10:38:09,773 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 10:43:48,936 - root - INFO - Logging initialisé. Fichier: logs/app.log

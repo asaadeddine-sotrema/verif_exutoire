@@ -1,6 +1,6 @@
 import pandas as pd
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, date
 import numpy as np
 import logging
 import unicodedata
@@ -14,9 +14,18 @@ def nettoyer_texte(texte):
 
 def convertir_date_robuste(val, assume_format="DD/MM/YYYY"):
     if pd.isna(val) or val == "": return pd.NaT
-    if isinstance(val, (pd.Timestamp, datetime.date)): 
-        return val.date() if isinstance(val, pd.Timestamp) else val
+    if isinstance(val, (pd.Timestamp, datetime, date)): 
+        return val.date() if isinstance(val, (pd.Timestamp, datetime)) else val
     v_str = str(val).strip()
+    
+    # 2. FORMATS ISO
+    if len(v_str) >= 10 and v_str[4] == '-' and v_str[7] == '-' and v_str[0:4].isdigit():
+        try:
+            from datetime import datetime
+            return datetime.strptime(v_str[:10], "%Y-%m-%d").date()
+        except:
+            pass
+            
     try:
         dt = pd.to_datetime(v_str, dayfirst=(assume_format.startswith("DD")), errors='coerce')
         if pd.notna(dt): return dt.date()

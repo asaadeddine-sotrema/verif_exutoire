@@ -16,16 +16,32 @@ DICT_CORRECTION_SUEZ = {
 
 def convertir_date_suez(val):
     if pd.isna(val) or val == "": return pd.NaT
-    if isinstance(val, (pd.Timestamp, datetime)):
-        return val.date()
+    if isinstance(val, (datetime, pd.Timestamp)): 
+        return val.date() if isinstance(val, (pd.Timestamp, datetime)) else val
     v_str = str(val).strip()
-    if re.match(r"^\d{2}/\d{2}/\d{4}", v_str):
-        try: return pd.to_datetime(v_str, format='%d/%m/%Y').date()
-        except: pass
+    
+    # 1. Tentative Excel Serial
     try:
-        dt = pd.to_datetime(v_str, errors='coerce')
+        val_num = float(v_str)
+        if val_num > 30000:
+            return pd.to_datetime(val_num, unit='D', origin='1899-12-30').date()
+    except:
+        pass
+
+    # 2. FORMATS FRANÇAIS STRICTS
+    for fmt in ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y"]:
+        try:
+            return datetime.strptime(v_str, fmt).date()
+        except:
+            continue
+            
+    # 3. Fallback Pandas avec dayfirst=True
+    try:
+        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
         if pd.notna(dt): return dt.date()
-    except: pass
+    except:
+        pass
+        
     return pd.NaT
 
 def normalize_site_key(txt):
@@ -79,7 +95,8 @@ def charger_suez_terrain(f, type_fichier):
             cl = str(c).lower().strip()
             if "n° ticket" in cl or "num tp manuel" in cl: cols_map[c] = "Num Ticket"
             if "n°bon" in cl or "n° bon" in cl or "numéro de bon" in cl: cols_map[c] = "Num Bon"
-            if "date ticket" in cl or "date du bon" in cl or "date" == cl: cols_map[c] = "Date_Ref"
+            if cl in ["date ticket", "date du bon", "date", "le", "journee", "journée"]: cols_map[c] = "Date_Ref"
+            elif "date" in cl: cols_map[c] = "Date_Ref"
             if "poids" in cl and not "delta" in cl: cols_map[c] = "Poids_Terrain"
             if "immat" in cl or "camion" in cl: cols_map[c] = "Immatriculation"
             if "chauffeur" in cl: cols_map[c] = "Chauffeur"
@@ -87,6 +104,7 @@ def charger_suez_terrain(f, type_fichier):
             if "matière" in cl or "libellé " in cl or "nature" in cl: cols_map[c] = "Matiere_T"
 
         df = df.rename(columns=cols_map)
+        df = df.loc[:, ~df.columns.duplicated()]
         
         if 'Poids_Terrain' in df.columns:
             df['Poids_Terrain'] = pd.to_numeric(df['Poids_Terrain'].astype(str).str.replace(',', '.'), errors='coerce').fillna(0)
@@ -144,7 +162,8 @@ def process_suez(f_ctc, f_dech, f_fac):
         if "n° bon de pesée" in cl: cols_ref[c] = "Num Ticket"
         if "quantité nette" in cl: cols_ref[c] = "Poids_Facture"
         if "humidité" in cl: cols_ref[c] = "Poids_Humidite"
-        if "date du bon" in cl: cols_ref[c] = "Date_Ref"
+        if cl in ["date du bon", "date", "le", "journee", "journée"]: cols_ref[c] = "Date_Ref"
+        elif "date" in cl: cols_ref[c] = "Date_Ref"
         if "nom recherche client" in cl: cols_ref[c] = "Billing_Client"
         
         if "nom de l'adresse de service" in cl:
@@ -170,6 +189,7 @@ def process_suez(f_ctc, f_dech, f_fac):
                 cols_ref[c] = "EXT Client"
 
     df_ref = df_ref.rename(columns=cols_ref)
+    df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
     df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
     
     if 'Num Ticket' in df_ref.columns:

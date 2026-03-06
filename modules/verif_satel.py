@@ -14,10 +14,18 @@ def convertir_date_robuste(val):
     if pd.isna(val) or val == "": return pd.NaT
     if isinstance(val, (datetime, pd.Timestamp)): return val
     s = str(val).strip()
-    for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y"]:
+    
+    # FORMATS ISO
+    if len(s) >= 10 and s[4] == '-' and s[7] == '-' and s[0:4].isdigit():
+        try:
+            return datetime.strptime(s[:10], "%Y-%m-%d").date()
+        except:
+            pass
+
+    for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%m/%d/%Y", "%d/%m/%Y %H:%M:%S", "%d-%m-%Y %H:%M:%S"]:
         try: return datetime.strptime(s, fmt)
         except: continue
-    return pd.to_datetime(val, errors='coerce')
+    return pd.to_datetime(val, dayfirst=True, errors='coerce')
 
 def normalize_site_key(txt):
     if not txt or pd.isna(txt): return "NAN"
