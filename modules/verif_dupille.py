@@ -190,6 +190,9 @@ def process_dupille(f_lb, f_fac):
          if j_col:
              df_lb[j_col] = df_lb[j_col].astype(str).replace(r'^\s*$', np.nan, regex=True).replace(['nan', 'NaN', 'None'], np.nan)
              df_lb[j_col] = df_lb[j_col].ffill()
+             
+    if 'Matiere_T' in df_lb.columns: df_lb['Matiere_T'] = df_lb['Matiere_T'].apply(normaliser_matiere_dupille)
+    if 'INT Client' in df_lb.columns: df_lb['INT Client'] = df_lb['INT Client'].apply(normaliser_client_dupille)
     
     df_fac = charger_dupille_facture(f_fac)
     cols_to_drop = [c for c in df_fac.columns if "COLONNE" in str(c).upper()]

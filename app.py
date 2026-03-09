@@ -141,7 +141,8 @@ def check_and_migrate_db(engine):
                 "Validation_Exutoire": "BOOLEAN DEFAULT FALSE",
                 "Poids_Terrain_Original": "FLOAT",
                 "Matiere_T_Original": "TEXT",
-                "INT_Client_Original": "TEXT"
+                "INT_Client_Original": "TEXT",
+                "batch_id": "TEXT"
             }
             
             for col, col_type in columns_to_add.items():
@@ -489,6 +490,25 @@ def resolve_col(df, col_base):
 # PERSISTANCE EN BASE DE DONNÉES
 # =============================================================================
 
+@st.dialog("Confirmation d'Enregistrement")
+def confirm_save_dialog(df, exutoire_name, engine):
+    nb_lignes = len(df)
+    nb_pb = df['Verif_Exutoire'].astype(str).str.contains('Pb.Ext').sum() if 'Verif_Exutoire' in df.columns else 0
+    
+    st.write(f"Voulez-vous vraiment enregistrer **{nb_lignes} lignes** en base de données pour l'exutoire **{exutoire_name}** ?")
+    
+    if nb_pb > 0:
+        st.warning(f"⚠️ **Attention** : ce lot contient **{nb_pb} lignes orphelines** (non rapprochées).")
+    
+    st.info("💡 Vous pourrez annuler cet import dans l'onglet Administration en cas d'erreur.")
+    
+    c1, c2 = st.columns(2)
+    if c1.button("✅ Oui, Enregistrer", type="primary"):
+        save_to_db(df, engine)
+        st.rerun()
+    if c2.button("❌ Annuler"):
+        st.rerun()
+
 def save_to_db(df, engine):
     """
     Sauvegarde le DataFrame en base de données avec gestion des conflits (Upsert).
@@ -527,6 +547,12 @@ def save_to_db(df, engine):
 
     df_export = df_export.astype(object).where(pd.notnull(df_export), None)
     df_export['isActive'] = True
+    
+    # Génération d'un ID de lot pour permettre l'annulation (Option 2)
+    batch_timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    first_exutoire = df_export['Exutoire'].dropna().iloc[0] if 'Exutoire' in df_export.columns and not df_export['Exutoire'].dropna().empty else "UNKNOWN"
+    batch_id = f"BATCH_{first_exutoire}_{batch_timestamp}"
+    df_export['batch_id'] = batch_id
 
     rows = df_export.to_dict(orient='records')
     if not rows: return
@@ -561,7 +587,12 @@ def save_to_db(df, engine):
             )
             result = conn.execute(stmt)
             conn.commit()
-            st.success(f"✅ Données sauvegardées avec succès ({result.rowcount} lignes traitées).")
+            
+            # Stocker le dernier batch en session pour proposer une annulation rapide
+            st.session_state['last_batch_id'] = batch_id
+            st.session_state['last_batch_count'] = result.rowcount
+            
+            st.success(f"✅ Données sauvegardées avec succès ({result.rowcount} lignes traitées - Lot : {batch_id}).")
                 
     except Exception as e:
         logger.error(f"Erreur Sauvegarde DB: {e}", exc_info=True)
@@ -626,7 +657,7 @@ def display_results(df):
         else: return ['background-color: #f8d7da; color: #721c24'] * len(row)
 
     st.write(f"Résultat : {len(df)} lignes traitées.")
-    
+
     cols_view = ['Date_Ref', 'Date', 'Num Ticket', 'Exutoire', 'Methode', 'Verif_Exutoire', 'Poids_Terrain', 'Poids_Facture', 'Ecart', 'INT Client', 'EXT Client', 'Verif_Client', 'Matiere_T', 'EXT_Matiere', 'Verif_Matiere']
     cols_view = [c for c in cols_view if c in df.columns]
     
@@ -759,52 +790,36 @@ def interface_admin():
                     st.warning("ID introuvable.")
 
     st.divider()
-    st.subheader("📦 Archivage Périodique")
     
-    with st.expander("Archivage par Critères (Exutoire / Période)"):
-        c_exu_del, c_dates_del = st.columns(2)
+    # === OPTION 2 : BOUTON D'URGENCE ANNULATION IMPORT ===
+    last_batch = st.session_state.get('last_batch_id')
+    last_count = st.session_state.get('last_batch_count')
+    
+    if last_batch:
+        st.subheader("🚨 Urgence : Annuler le dernier import")
+        st.warning(f"Votre dernier import (**{last_count} lignes**) a reçu l'identifiant de lot : `{last_batch}`.")
         
-        exu_del = c_exu_del.selectbox("Exutoire concerné", ["Sélectionner..."] + ["DUPILLE", "PICHETA GPSEO", "VALENE", "SUEZ"])
-        dates_del = c_dates_del.date_input("Période cible", [])
-        
-        motif_del = st.text_input("Motif de l'opération", "")
-        
-        if st.button("Exécuter l'archivage", type="primary"):
-            if exu_del == "Sélectionner..." or len(dates_del) != 2:
-                st.error("Veuillez sélectionner un exutoire et une période valide (Début - Fin).")
-            else:
-                d_start, d_end = dates_del
-                confirm_msg = f"Êtes-vous sûr de vouloir archiver les données {exu_del} du {d_start} au {d_end} ?"
-                
-                with engine.connect() as conn:
-                    # Count before delete
-                    stmt_count = text(f"""
-                        SELECT COUNT(*) FROM {TABLE_NAME} 
-                        WHERE "Exutoire" = :exutoire 
-                        AND "Date" >= :d_start AND "Date" <= :d_end
-                        AND "isActive" = TRUE
-                    """)
-                    count = conn.execute(stmt_count, {"exutoire": exu_del, "d_start": d_start, "d_end": d_end}).scalar()
-                    
-                    if count == 0:
-                        st.warning("Aucune donnée active correspondante trouvée.")
-                    else:
-                        stmt_upd = text(f"""
-                            UPDATE {TABLE_NAME} 
-                            SET "isActive" = FALSE, "Motif" = :motif, "Dernier_Utilisateur" = :user 
-                            WHERE "Exutoire" = :exutoire 
-                            AND "Date" >= :d_start AND "Date" <= :d_end
-                        """)
-                        conn.execute(stmt_upd, {
-                            "motif": motif_del, 
-                            "user": st.session_state["username"],
-                            "exutoire": exu_del,
-                            "d_start": d_start,
-                            "d_end": d_end
-                        })
-                        conn.commit()
-                        st.success(f"✅ {count} lignes archivées avec succès.")
-                        st.rerun()
+        if st.button("⏪ Annuler cet import immédiatement", type="primary"):
+            with engine.connect() as conn:
+                stmt_rb = text(f"""
+                    UPDATE {TABLE_NAME} 
+                    SET "isActive" = FALSE, 
+                        "Motif" = 'Annulation Manuelle (Erreur d''import)', 
+                        "Dernier_Utilisateur" = :user 
+                    WHERE batch_id = :batch_id
+                """)
+                res_rb = conn.execute(stmt_rb, {"user": st.session_state["username"], "batch_id": last_batch})
+                conn.commit()
+                if res_rb.rowcount > 0:
+                    st.success(f"✅ Succès : {res_rb.rowcount} lignes de l'import {last_batch} ont été annulées et masquées.")
+                    # On efface la mémoire de session pour éviter les double-clics
+                    st.session_state['last_batch_id'] = None
+                    st.session_state['last_batch_count'] = None
+                    st.rerun()
+                else:
+                    st.error("Impossible de trouver les lignes de ce lot. Elles ont peut-être déjà été supprimées.")
+        st.divider()
+
 
     if st.session_state.get("username") == "admin":
         st.divider()
@@ -1446,8 +1461,7 @@ else:
                 df = st.session_state['df_dupille']
                 display_results(df)
                 if st.button("💾 Enregistrer tout en Base", type="primary"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "DUPILLE", engine)
 
         elif provider == "PICHETA GPSEO":
             st.title("Import PICHETA GPSEO")
@@ -1466,8 +1480,7 @@ else:
                 df = st.session_state['df_picheta']
                 display_results(df)
                 if st.button("💾 Enregistrer tout en Base", type="primary"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "PICHETA GPSEO", engine)
 
         elif provider == "VALENE":
             st.title("Import VALENE")
@@ -1483,8 +1496,7 @@ else:
                 df = st.session_state['df_valene']
                 display_results(df)
                 if st.button("💾 Enregistrer tout en Base", type="primary"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "VALENE", engine)
 
         elif provider == "PICHETA VALOSEINE":
             st.title("Import PICHETA VALOSEINE")
@@ -1501,8 +1513,7 @@ else:
                 df = st.session_state['df_valoseine']
                 display_results(df)
                 if st.button("💾 Enregistrer tout en Base", type="primary"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "PICHETA VALOSEINE", engine)
 
         elif provider == "PICHETA SMIRTOM":
             st.title("Import PICHETA SMIRTOM")
@@ -1517,8 +1528,7 @@ else:
                 df = st.session_state['df_picheta_smirtom']
                 display_results(df)
                 if st.button("💾 Enregistrer tout en Base", type="primary"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "PICHETA SMIRTOM", engine)
 
 
         elif provider == "PICHETA INOE":
@@ -1536,8 +1546,7 @@ else:
                 df = st.session_state['df_inoe']
                 display_results(df)
                 if st.button("💾 Enregistrer tout en Base", type="primary"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "PICHETA INOE", engine)
 
         elif provider == "SUEZ":
             st.title("Import SUEZ")
@@ -1555,8 +1564,7 @@ else:
                 display_results(df)
                 
                 if st.button("💾 Enregistrer tout en Base", type="primary"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "SUEZ", engine)
     
         elif provider == "AZALYS SOTREMA":
             st.title("Import AZALYS SOTREMA")
@@ -1573,8 +1581,7 @@ else:
                  df = st.session_state['df_azalys_sotrema']
                  display_results(df)
                  if st.button("💾 Enregistrer tout en Base", type="primary", key="save_as"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "AZALYS SOTREMA", engine)
 
         elif provider == "AZALYS VALOSEINE":
             st.title("Import AZALYS VALOSEINE")
@@ -1591,8 +1598,7 @@ else:
                  df = st.session_state['df_azalys_valoseine']
                  display_results(df)
                  if st.button("💾 Enregistrer tout en Base", type="primary", key="save_av"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "AZALYS VALOSEINE", engine)
 
 
 
@@ -1629,8 +1635,7 @@ else:
                  df = st.session_state['df_vert_compost']
                  display_results(df)
                  if st.button("💾 Enregistrer tout en Base", type="primary", key="save_vcs"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "VERT COMPOST SMIRTOM", engine)
 
         elif provider == "SATEL SMIRTOM ENC":
             st.title("Import SATEL SMIRTOM ENC")
@@ -1647,8 +1652,7 @@ else:
                  df = st.session_state['df_satel_smirtom_enc']
                  display_results(df)
                  if st.button("💾 Enregistrer tout en Base", type="primary", key="save_sse"): 
-                    save_to_db(df, engine)
-                    st.success("Données enregistrées avec succès !")
+                    confirm_save_dialog(df, "SATEL SMIRTOM ENC", engine)
 
         elif provider in noms_dynamiques:
             # Traitement Dynamique
@@ -1673,8 +1677,7 @@ else:
                      display_results(df)
                      
                      if st.button("💾 Enregistrer tout en Base", type="primary", key=f"save_dyn_{provider}"): 
-                        save_to_db(df, engine)
-                        st.success("Données enregistrées avec succès !")
+                        confirm_save_dialog(df, provider, engine)
             else:
                 st.error("Configuration du prestataire introuvable.")
     
