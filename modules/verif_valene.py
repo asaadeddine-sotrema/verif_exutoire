@@ -196,8 +196,21 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
     df_ter = df_ter.dropna(how='all', subset=[c for c in df_ter.columns if c not in ['Activité', 'Client']])
     df_ref = df_ref.dropna(how='all')
     
+    # Nettoyage des lignes vides ou sous-totaux (sans Date ET sans Ticket)
+    if 'Date_Ref' in df_ref.columns and 'Num Ticket' in df_ref.columns:
+        mask_empty = (
+            (df_ref['Num Ticket'].isna() | (df_ref['Num Ticket'].astype(str).str.strip() == '') | (df_ref['Num Ticket'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+            (df_ref['Date_Ref'].isna() | (df_ref['Date_Ref'].astype(str).str.strip() == '') | (df_ref['Date_Ref'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+        )
+        df_ref = df_ref[~mask_empty].copy()
+    
     if 'Num Ticket' in df_ref.columns: df_ref['Num Ticket'] = df_ref['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True)
     df_ter['Matiere_T'] = df_ter['Matiere_T'].apply(normaliser_matiere_valene)
+    
+    # Nettoyage des sous-totaux dans la facture Valene
+    mask_subtotal = df_ref.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+    df_ref = df_ref[~mask_subtotal].copy()
+    
     if 'EXT_Matiere' in df_ref.columns: df_ref['EXT_Matiere_Norm'] = df_ref['EXT_Matiere'].apply(normaliser_matiere_valene)
     else: df_ref['EXT_Matiere_Norm'] = ""
     # --------- SMART MATCH VALENE ---------
@@ -548,10 +561,18 @@ def process_valoseine(f_ter, f_fac):
         df_ref['EXT Client'] = df_ref['TEMP_CodeAdresse'].replace(['', 'nan', 'NAN', 'None'], np.nan).fillna(df_ref['_rupture'])
     else:
         df_ref['EXT Client'] = df_ref['_rupture']
+        
+    # Nettoyage des lignes vides ou sous-totaux (sans Date ET sans Ticket)
+    mask_empty = (
+        (df_ref['Num Ticket'].isna() | (df_ref['Num Ticket'].astype(str).str.strip() == '') | (df_ref['Num Ticket'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+        (df_ref['Date_Ref'].isna() | (df_ref['Date_Ref'].astype(str).str.strip() == '') | (df_ref['Date_Ref'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+    )
+    df_ref = df_ref[~mask_empty].copy()
     
-    # Suppression des lignes de rupture
+    # Suppression des lignes de rupture et des sous-totaux
     mask_rupture = df_ref.apply(lambda r: any("code adresse:" in str(v).lower() for v in r), axis=1)
-    df_ref = df_ref[~mask_rupture].copy()
+    mask_subtotal = df_ref.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+    df_ref = df_ref[~(mask_rupture | mask_subtotal)].copy()
 
     if "Poids_Facture" in df_ref.columns:
         df_ref["Poids_Facture"] = df_ref["Poids_Facture"].astype(str).str.replace(',', '.')

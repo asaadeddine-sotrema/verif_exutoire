@@ -2,7 +2,6 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Set timezone and install required system packages
 RUN apt-get update && apt-get install -y \
     tzdata \
     gcc \

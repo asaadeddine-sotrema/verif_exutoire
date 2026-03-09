@@ -738,3 +738,50 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-03-06 10:37:48,390 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-03-06 10:38:09,773 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-03-06 10:43:48,936 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 14:42:53,439 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 14:42:53 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:04:45,933 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:04:46 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:05:17,190 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:05:17 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:05:33 - INFO - [System] - Connexion réussie: admin
+2026-03-06 15:05:33 - ERROR - [admin] - Erreur Connexion DB: No module named 'cryptography'
+2026-03-06 15:17:13,009 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:17:13 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:17:47 - INFO - [System] - Connexion réussie: admin
+2026-03-06 15:17:47 - ERROR - [admin] - Erreur Connexion DB: No module named 'cryptography'
+2026-03-06 15:20:24,865 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:20:25 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:21:06 - INFO - [System] - Connexion réussie: admin
+2026-03-06 15:27:00,845 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:27:01 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:27:08 - INFO - [System] - Connexion réussie: admin
+2026-03-06 15:42:34,324 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:42:34 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:42:57 - INFO - [System] - Connexion réussie: admin
+2026-03-06 15:47:58,264 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:47:58 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:52:56,549 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:52:56 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:56:55,681 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:56:55 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:58:49,663 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 15:58:49 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-06 16:05:45,128 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-06 16:05:45 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-09 08:49:51 - INFO - [System] - Connexion réussie: admin
+2026-03-09 09:10:36,917 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 09:10:55,377 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 09:16:58,631 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 09:16:58 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-09 09:24:12 - INFO - [System] - Connexion réussie: admin
+2026-03-09 10:21:28,246 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 10:21:28 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-09 10:54:07,545 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 10:54:07 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-09 11:30:25,197 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 11:30:25 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-09 11:48:35,801 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 11:48:35 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-09 11:51:17,134 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 11:51:17 - INFO - [System] - Logging initialisé. Fichier: logs/app.log

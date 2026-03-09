@@ -60,7 +60,14 @@ def check_site_keys(row):
     k2 = str(row.get('Key_Site_F', '')).strip().upper()
     if not k1 or not k2 or k1 == 'NAN' or k2 == 'NAN': return False
     if k1 == k2: return True
-    s1 = set(k1.split()); s2 = set(k2.split())
+    
+    ignore_words = {'DECHETTERIE', 'DECHETERIE', 'SMIRTOM', 'SIARE', 'SAINT', 'ST', 'SUR', 'EN', 'LES', 'LE', 'LA', 'DES', 'DE'}
+    s1 = set(k1.split()) - ignore_words
+    s2 = set(k2.split()) - ignore_words
+    
+    if not s1 or not s2:
+        return False
+        
     return not s1.isdisjoint(s2)
 
 def resolve_col(df, base_name):
@@ -95,6 +102,8 @@ def normaliser_matiere_dupille(val):
     if "CARTON" in v: return "CARTONS"
     if "PLASTIQUE" in v: return "PLASTIQUES"
     if "VÉGÉTAUX" in v or "VEGETAUX" in v: return "DECHETS VERTS"
+    if "DÉCHETS VÉGÉTAUX" in v or "DECHETS VEGETAUX" in v: return "DECHETS VERTS"
+    if "DECHETS VERTS" in v or "DÉCHETS VERTS" in v: return "DECHETS VERTS"
     return v
 
 def normaliser_client_dupille(val):
@@ -208,9 +217,22 @@ def process_dupille(f_lb, f_fac):
             for idx in cols_indices[1:]: combined = combined.fillna(df_fac.iloc[:, idx])
             df_fac = df_fac.loc[:, df_fac.columns != target].copy()
             df_fac[target] = combined
-    if "EXT Client" in df_fac.columns:
-        df_fac['EXT Client'] = df_fac['EXT Client'].astype(str).str.upper()
-        df_fac = df_fac[~df_fac['EXT Client'].str.contains(r"DECHETTERIE PROFESSION+EL", regex=True, na=False)]
+    # Nettoyage des sous-totaux et lignes vides (sans Date ET sans Ticket) dans la facture Dupille
+    mask_empty = (
+        (df_fac['Num Ticket'].isna() | (df_fac['Num Ticket'].astype(str).str.strip() == '') | (df_fac['Num Ticket'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+        (df_fac['Date_Ref'].isna() | (df_fac['Date_Ref'].astype(str).str.strip() == '') | (df_fac['Date_Ref'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+    )
+    df_fac = df_fac[~mask_empty].copy()
+    
+    # Nettoyage supplémentaire par keywords
+    mask_subtotal = df_fac.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+    df_fac = df_fac[~mask_subtotal].copy()
+    
+    # Exclusion des clients "dechetterie professionnel"
+    if 'EXT Client' in df_fac.columns:
+        mask_pro = df_fac['EXT Client'].astype(str).str.lower().str.contains("dechetterie professionnel", na=False)
+        df_fac = df_fac[~mask_pro].copy()
+    
     if "Transporteur" in df_fac.columns:
         df_fac['Transporteur'] = df_fac['Transporteur'].astype(str).str.upper()
         df_fac = df_fac[df_fac['Transporteur'].str.contains("SOTREMA", na=False)]

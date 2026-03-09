@@ -4,3 +4,9 @@ openpyxl
 sqlalchemy
 psycopg2-binary
 python-dotenv
+bcrypt
+matplotlib
+scipy
+extra-streamlit-components
+cryptography
+xlrd>=2.0.1

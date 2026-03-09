@@ -48,13 +48,16 @@ def process_ecorec(f_ecorec, f_controle):
         
         # Gestion des ruptures / lignes vides Ecorec
         if "Num Bon" in df_eco.columns and "TONNAGES_Ecorec" in df_eco.columns:
-            # Rejeter les lignes de sous-totaux ou vides (ex: où Num Bon est nul ou TONNAGES est vide)
-             df_eco = df_eco.dropna(subset=['Num Bon', 'TONNAGES_Ecorec'])
-             df_eco = df_eco[df_eco['Num Bon'].astype(str).str.strip() != '']
-             df_eco = df_eco[df_eco['Num Bon'].astype(str).str.upper() != 'NAN']
-             # Rejeter les lignes d'en-tête répétées
-             df_eco = df_eco[df_eco['Num Bon'].astype(str).str.upper().str.strip() != 'NUM BON']
-             df_eco = df_eco[df_eco['TONNAGES_Ecorec'].astype(str).str.strip() != '']
+             # Nettoyage des sous-totaux et lignes vides (sans Date ET sans Ticket/Bon) dans Ecorec
+             mask_empty_eco = (
+                 (df_eco['Num Bon'].isna() | (df_eco['Num Bon'].astype(str).str.strip() == '') | (df_eco['Num Bon'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+                 (df_eco['Date'].isna() | (df_eco['Date'].astype(str).str.strip() == '') | (df_eco['Date'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+             )
+             df_eco = df_eco[~mask_empty_eco].copy()
+             
+             # Nettoyage supplémentaire par keywords
+             mask_subtotal_eco = df_eco.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+             df_eco = df_eco[~mask_subtotal_eco].copy()
         else:
              logger.error("Colonnes 'Num Bon' ou 'TONNAGES' non trouvées dans Ecorec.")
              return pd.DataFrame()
@@ -99,12 +102,16 @@ def process_ecorec(f_ecorec, f_controle):
              logger.error("Colonnes 'Num Bon' ou 'QuantiteLigne' non trouvées dans fichier Contrôlé.")
              return pd.DataFrame()
 
-        # Nettoyage données Contrôlé
-        df_ctrl = df_ctrl.dropna(subset=['Num Bon'])
-        df_ctrl = df_ctrl[df_ctrl['Num Bon'].astype(str).str.strip() != '']
-        df_ctrl = df_ctrl[df_ctrl['Num Bon'].astype(str).str.upper() != 'NAN']
-        df_ctrl = df_ctrl[df_ctrl['Num Bon'].astype(str).str.upper().str.strip() != 'NUM BON']
-        df_ctrl["TONNAGES_Contrôlé"] = pd.to_numeric(df_ctrl["TONNAGES_Contrôlé"], errors='coerce')
+        # Nettoyage des sous-totaux et lignes vides (sans Date ET sans Ticket/Bon) dans le fichier contrôlé
+        mask_empty_ctrl = (
+            (df_ctrl['Num Bon'].isna() | (df_ctrl['Num Bon'].astype(str).str.strip() == '') | (df_ctrl['Num Bon'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+            (df_ctrl['Date'].isna() | (df_ctrl['Date'].astype(str).str.strip() == '') | (df_ctrl['Date'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+        )
+        df_ctrl = df_ctrl[~mask_empty_ctrl].copy()
+
+        # Nettoyage supplémentaire par keywords
+        mask_subtotal_ctrl = df_ctrl.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+        df_ctrl = df_ctrl[~mask_subtotal_ctrl].copy()
         
         # Nettoyage Clé Num Bon Contrôlé
         df_ctrl['K'] = df_ctrl['Num Bon'].astype(str).str.replace(r'\.0$', '', regex=True).str.strip().str.upper()

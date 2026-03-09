@@ -101,7 +101,7 @@ def charger_suez_terrain(f, type_fichier):
             if "immat" in cl or "camion" in cl: cols_map[c] = "Immatriculation"
             if "chauffeur" in cl: cols_map[c] = "Chauffeur"
             if "client" in cl or "provenance" in cl or "nchantier" in cl: cols_map[c] = "Client"
-            if "matière" in cl or "libellé " in cl or "nature" in cl: cols_map[c] = "Matiere_T"
+            if "matière" in cl or "libellé " in cl or "nature" in cl or "description" in cl: cols_map[c] = "Matiere_T"
 
         df = df.rename(columns=cols_map)
         df = df.loc[:, ~df.columns.duplicated()]
@@ -190,7 +190,8 @@ def process_suez(f_ctc, f_dech, f_fac):
 
     df_ref = df_ref.rename(columns=cols_ref)
     df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
-    df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
+    
+
     
     if 'Num Ticket' in df_ref.columns:
         df_ref['Num Ticket'] = df_ref['Num Ticket'].astype(str).str.replace(r'\.0$', '', regex=True).replace('nan', '')

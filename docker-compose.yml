@@ -5,8 +5,6 @@ services:
     build: .
     container_name: verif_exutoire_app
     restart: always
-    ports:
-      - "8501:8501"
     env_file:
       - .env
     volumes:

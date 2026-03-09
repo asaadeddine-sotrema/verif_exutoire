@@ -118,6 +118,7 @@ def charger_picheta(f, source):
         elif "exutoire" in cl and "INT Client" not in cols.values(): cols[c] = "INT Client" 
         if "bon" in cl and "nbr" not in cl: cols[c] = "Num Bon"
         if "immat" in cl: cols[c] = "Immatriculation"
+        if "chauffeur" in cl or "conducteur" in cl: cols[c] = "Chauffeur"
     df = df.rename(columns=cols)
     df = df.loc[:, ~df.columns.duplicated()]
     if "INT Client" not in df.columns: df["INT Client"] = f"PICHETA {source}"
@@ -175,9 +176,17 @@ def process_picheta(f_ctc, f_dech, f_exp):
     else:
         df_ref['EXT Client'] = df_ref['_rupture']
     
-    # Nettoyage des lignes de rupture
+    # Nettoyage des lignes vides ou sous-totaux (sans Date ET sans Ticket)
+    mask_empty = (
+        (df_ref['Num Ticket'].isna() | (df_ref['Num Ticket'].astype(str).str.strip() == '') | (df_ref['Num Ticket'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+        (df_ref['Date_Ref'].isna() | (df_ref['Date_Ref'].astype(str).str.strip() == '') | (df_ref['Date_Ref'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+    )
+    df_ref = df_ref[~mask_empty].copy()
+    
+    # Nettoyage des lignes de rupture et des sous-totaux
     mask_rupture = df_ref.apply(lambda r: any("code adresse:" in str(v).lower() for v in r), axis=1)
-    df_ref = df_ref[~mask_rupture].copy()
+    mask_subtotal = df_ref.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+    df_ref = df_ref[~(mask_rupture | mask_subtotal)].copy()
     
     if "Poids_Facture" in df_ref.columns:
         df_ref["Poids_Facture"] = pd.to_numeric(df_ref["Poids_Facture"], errors='coerce')
@@ -399,9 +408,17 @@ def process_picheta_smirtom(f_ter, f_fac):
     else:
         df_ref['EXT Client'] = df_ref['_rupture']
     
-    # Suppression des lignes de rupture
+    # Nettoyage des lignes vides ou sous-totaux (sans Date ET sans Ticket)
+    mask_empty = (
+        (df_ref['Num Ticket'].isna() | (df_ref['Num Ticket'].astype(str).str.strip() == '') | (df_ref['Num Ticket'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+        (df_ref['Date_Ref'].isna() | (df_ref['Date_Ref'].astype(str).str.strip() == '') | (df_ref['Date_Ref'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+    )
+    df_ref = df_ref[~mask_empty].copy()
+    
+    # Suppression des lignes de rupture et des sous-totaux
     mask_rupture = df_ref.apply(lambda r: any("code adresse:" in str(v).lower() for v in r), axis=1)
-    df_ref = df_ref[~mask_rupture].copy()
+    mask_subtotal = df_ref.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+    df_ref = df_ref[~(mask_rupture | mask_subtotal)].copy()
 
     if "Poids_Facture" in df_ref.columns:
         df_ref["Poids_Facture"] = pd.to_numeric(df_ref["Poids_Facture"], errors='coerce')
@@ -552,9 +569,17 @@ def process_picheta_inoe(f_ctc, f_dech, f_inv):
     else:
         df_ref['EXT Client'] = df_ref['_rupture']
     
-    # Suppression des lignes de rupture
+    # Nettoyage des lignes vides ou sous-totaux (sans Date ET sans Ticket)
+    mask_empty = (
+        (df_ref['Num Ticket'].isna() | (df_ref['Num Ticket'].astype(str).str.strip() == '') | (df_ref['Num Ticket'].astype(str).str.lower().isin(['nan', 'nat', 'none']))) &
+        (df_ref['Date_Ref'].isna() | (df_ref['Date_Ref'].astype(str).str.strip() == '') | (df_ref['Date_Ref'].astype(str).str.lower().isin(['nan', 'nat', 'none'])))
+    )
+    df_ref = df_ref[~mask_empty].copy()
+    
+    # Suppression des lignes de rupture et des sous-totaux
     mask_rupture = df_ref.apply(lambda r: any("code adresse:" in str(v).lower() for v in r), axis=1)
-    df_ref = df_ref[~mask_rupture].copy()
+    mask_subtotal = df_ref.apply(lambda r: any(str(v).strip().lower() in ['total', 'sous-total', 'sous total'] or str(v).strip().lower().startswith('total ') for v in r), axis=1)
+    df_ref = df_ref[~(mask_rupture | mask_subtotal)].copy()
 
     if "Poids_Facture" in df_ref.columns:
         df_ref["Poids_Facture"] = pd.to_numeric(df_ref["Poids_Facture"], errors='coerce')
