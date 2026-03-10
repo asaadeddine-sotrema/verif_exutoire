@@ -810,3 +810,30 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-03-09 15:24:51,745 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-03-09 15:24:51 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
 2026-03-09 15:28:49 - INFO - [System] - Connexion réussie: admin
+2026-03-09 16:11:20,879 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-09 16:11:21 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-09 16:14:49 - INFO - [System] - Connexion réussie: admin
+2026-03-10 08:56:43 - INFO - [System] - Connexion réussie: admin
+2026-03-10 10:09:39,807 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 10:09:39 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 10:27:24,375 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 10:27:24 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 10:38:33 - INFO - [System] - Connexion réussie: admin
+2026-03-10 10:51:39,893 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 10:51:40 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 10:51:48 - INFO - [System] - Connexion réussie: admin
+2026-03-10 11:00:55,385 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:00:55 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:04:21 - INFO - [System] - Connexion réussie: admin
+2026-03-10 11:05:54,304 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:05:54 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:13:41 - INFO - [System] - Connexion réussie: admin
+2026-03-10 11:18:20,659 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:18:20 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:24:44 - INFO - [System] - Connexion réussie: admin
+2026-03-10 11:29:04,908 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:29:05 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 11:29:12 - INFO - [System] - Connexion réussie: admin
+2026-03-10 12:13:12,111 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-10 12:13:12 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-10 12:14:57 - INFO - [System] - Connexion réussie: admin

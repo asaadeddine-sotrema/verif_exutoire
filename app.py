@@ -1098,9 +1098,20 @@ def interface_dashboard():
 
     col_cfg = {}
     for col in df_disp.columns:
-        if col in ['INT T.', 'EXT T.', 'Ecart']: col_cfg[col] = st.column_config.NumberColumn(col, width="small", format="%.2f")
-        elif col == 'Date': col_cfg[col] = st.column_config.DateColumn(col, width="small", format="DD/MM/YYYY")
-        else: col_cfg[col] = st.column_config.TextColumn(col, width="small")
+        if col in ['INT T.', 'EXT T.', 'Ecart']: 
+            col_cfg[col] = st.column_config.NumberColumn(col, width="small", format="%.2f")
+        elif col == 'Date': 
+            col_cfg[col] = st.column_config.DateColumn(col, width="small", format="DD/MM/YYYY")
+        elif col == 'V. Exu':
+            col_cfg[col] = st.column_config.TextColumn(col, width="small", help="Statut de rapprochement : OK ou Pb.Ext (Ticket facturé mais absent du terrain ou l'inverse)")
+        elif col == 'V. T.':
+            col_cfg[col] = st.column_config.TextColumn(col, width="small", help="Vérification du Tonnage : OK ou Pb.T (Écart de poids détecté)")
+        elif col == 'V. Mat':
+            col_cfg[col] = st.column_config.TextColumn(col, width="small", help="Vérification de la Matière : OK ou Pb.Mat (Divergence de type de déchet)")
+        elif col == 'V. Cli':
+            col_cfg[col] = st.column_config.TextColumn(col, width="small", help="Vérification du Client : OK ou Pb.Clt (Divergence de chantier/destination)")
+        else: 
+            col_cfg[col] = st.column_config.TextColumn(col, width="small")
 
     cols_global = ['Date', 'Ticket', 'Bon', 'Exutoire', 'Activ.', 'INT Client', 'EXT Client', 'INT Mat', 'EXT Mat', 'Immat', 'Chauffeur', 'V. Exu', 'V. T.', 'V. Mat', 'V. Cli', 'INT T.', 'EXT T.', 'Ecart']
     cols_tonnage = ['Date', 'Ticket','Bon', 'Exutoire','Activ.', 'Client','Immat', 'Chauffeur', 'INT T.', 'EXT T.', 'Ecart']
@@ -1232,7 +1243,7 @@ def interface_dashboard():
         t_ec = df_final['Ecart'].sum()
         
         c_m1, c_m2, c_m3 = st.columns(3)
-        c_m1.metric("Poids Terrain (T)", f"{t_int:,.2f}")
+        c_m1.metric("Poids ECOREC (T)", f"{t_int:,.2f}")
         c_m2.metric("Poids Facture (T)", f"{t_ext:,.2f}")
         c_m3.metric("Ecart Total (T)", f"{t_ec:,.2f}", delta_color="inverse")
 
@@ -1451,8 +1462,13 @@ else:
     
         if provider == "DUPILLE":
             st.title("Import Dupille")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / DUPILLE)`
+                """)
             c1, c2 = st.columns(2)
-            f_lb = c1.file_uploader("Fichier Terrain", type=['xlsx', 'xls', 'xlsm'])
+            f_lb = c1.file_uploader("Fichier ECOREC", type=['xlsx', 'xls', 'xlsm'])
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xlsm'])
             if st.button("Lancer") and f_lb and f_fac:
                 st.session_state['df_dupille'] = process_dupille(f_lb, f_fac)
@@ -1465,6 +1481,11 @@ else:
 
         elif provider == "PICHETA GPSEO":
             st.title("Import PICHETA GPSEO")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / PICHETA GPSEO)`
+                """)
             c1, c2 = st.columns(2)
             with c1:
                 f_ctc = st.file_uploader("Fichier CTC", type=['xlsx', 'xls', 'xlsm'])
@@ -1484,10 +1505,20 @@ else:
 
         elif provider == "VALENE":
             st.title("Import VALENE")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / VALENE)`
+                
+                **Fichiers à charger (3) :**
+                1.  **PAP** : Extraction Ecorec PAP.
+                2.  **PAV** : Extraction Ecorec PAV.
+                3.  **SOTREMA2** : Extraction Ecorec Sotrema2.
+                """)
             c1, c2, c3 = st.columns(3)
-            f_pap = c1.file_uploader("PAP", type=['xlsx', 'xls', 'xlsm'])
-            f_pav = c2.file_uploader("PAV", type=['xlsx', 'xls', 'xlsm'])
-            f_sot = c3.file_uploader("SOTREMA2", type=['xlsx', 'xls', 'xlsm'])
+            f_pap = c1.file_uploader("Fichier ECOREC (PAP)", type=['xlsx', 'xls', 'xlsm'])
+            f_pav = c2.file_uploader("Fichier ECOREC (PAV)", type=['xlsx', 'xls', 'xlsm'])
+            f_sot = c3.file_uploader("Fichier ECOREC (SOTREMA2)", type=['xlsx', 'xls', 'xlsm'])
             f_exp = st.file_uploader("Export Facture", type=['xlsx', 'xls', 'xlsm'])
             if st.button("Lancer") and f_exp:
                 st.session_state['df_valene'] = process_valene(f_pap, f_pav, f_sot, f_exp)
@@ -1500,6 +1531,11 @@ else:
 
         elif provider == "PICHETA VALOSEINE":
             st.title("Import PICHETA VALOSEINE")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / PICHETA VALOSEINE)`
+                """)
             c1, c2 = st.columns(2)
             f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'])
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'])
@@ -1517,6 +1553,11 @@ else:
 
         elif provider == "PICHETA SMIRTOM":
             st.title("Import PICHETA SMIRTOM")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / PICHETA SMIRTOM)`
+                """)
             c1, c2 = st.columns(2)
             f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'])
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'])
@@ -1533,6 +1574,11 @@ else:
 
         elif provider == "PICHETA INOE":
             st.title("Import PICHETA INOE")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / PICHETA INOE)`
+                """)
             c1, c2 = st.columns(2)
             f_ctc = c1.file_uploader("Fichier CTC", type=['xls', 'xlsx'])
             f_dech = c2.file_uploader("Fichier Dechetterie", type=['xls', 'xlsx'])
@@ -1550,6 +1596,11 @@ else:
 
         elif provider == "SUEZ":
             st.title("Import SUEZ")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / SUEZ)`
+                """)
             start_col, end_col = st.columns(2)
             f_ctc = start_col.file_uploader("Fichier CTC", type=['xlsx', 'xls', 'xlsm'])
             f_dech = end_col.file_uploader("Fichier DECH", type=['xlsx', 'xls', 'xlsm'])
@@ -1568,8 +1619,13 @@ else:
     
         elif provider == "AZALYS SOTREMA":
             st.title("Import AZALYS SOTREMA")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / AZALYS SOTREMA)`
+                """)
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="as_t")
+            f_ter = c1.file_uploader("Fichier ECOREC", type=['xls', 'xlsx'], key="as_t")
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="as_f")
             
             if st.button("Lancer"):
@@ -1585,8 +1641,13 @@ else:
 
         elif provider == "AZALYS VALOSEINE":
             st.title("Import AZALYS VALOSEINE")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / AZALYS VALOSEINE)`
+                """)
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="av_t")
+            f_ter = c1.file_uploader("Fichier ECOREC", type=['xls', 'xlsx'], key="av_t")
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="av_f")
             
             if st.button("Lancer"):
@@ -1622,8 +1683,13 @@ else:
 
         elif provider == "VERT COMPOST SMIRTOM":
             st.title("Import VERT COMPOST SMIRTOM")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / VERT COMPOST SMIRTOM)`
+                """)
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="vcs_t")
+            f_ter = c1.file_uploader("Fichier ECOREC", type=['xls', 'xlsx'], key="vcs_t")
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="vcs_f")
             
             if st.button("Lancer"):
@@ -1639,8 +1705,13 @@ else:
 
         elif provider == "SATEL SMIRTOM ENC":
             st.title("Import SATEL SMIRTOM ENC")
+            with st.expander("❓ Besoin d'aide ?", expanded=False):
+                st.markdown("""
+                **Chemin ECOREC :**  
+                `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / SATEL SMIRTOM ENC)`
+                """)
             c1, c2 = st.columns(2)
-            f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key="sse_t")
+            f_ter = c1.file_uploader("Fichier ECOREC", type=['xls', 'xlsx'], key="sse_t")
             f_fac = c2.file_uploader("Fichier Facture", type=['xlsx', 'xls'], key="sse_f")
             
             if st.button("Lancer"):
@@ -1663,7 +1734,7 @@ else:
             
             if presta_config:
                 c1, c2 = st.columns(2)
-                f_ter = c1.file_uploader("Fichier Terrain", type=['xls', 'xlsx'], key=f"dyn_t_{provider}")
+                f_ter = c1.file_uploader("Fichier ECOREC", type=['xls', 'xlsx'], key=f"dyn_t_{provider}")
                 f_fac = c2.file_uploader(f"Fichier Facture", type=['xlsx', 'xls'], key=f"dyn_f_{provider}")
                 
                 if st.button("Lancer", type="primary"):

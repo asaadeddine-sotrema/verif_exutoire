@@ -415,6 +415,11 @@ def show_verif_heures_ui(engine=None, mode="Import des fichiers"):
     
     if mode == "📥 Import des fichiers":
         st.subheader("📥 Import des fichiers")
+        with st.expander("❓ Besoin d'aide ?", expanded=False):
+            st.markdown("""
+            **Chemin ECOREC :**  
+            `(RH / Outil Activité)`
+            """)
         st.info("Validation de la cohérence des flux et calcul des écarts.")
     
         def clear_results():

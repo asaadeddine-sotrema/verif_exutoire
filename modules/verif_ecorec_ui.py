@@ -10,6 +10,11 @@ def show_verif_ecorec_ui():
     """
     st.title("♻️ Vérification Ecorec")
     st.markdown("Cet outil permet de comparer les tonnages exportés depuis Ecorec avec ceux du fichier corrigé par l'exploitation.")
+    with st.expander("❓ Besoin d'aide ?", expanded=False):
+        st.markdown("""
+        **Chemin ECOREC :**  
+        `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire)`
+        """)
     st.divider()
 
     c1, c2 = st.columns(2)

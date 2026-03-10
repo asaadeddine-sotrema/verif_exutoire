@@ -30,26 +30,26 @@ def show_admin_prestataires_ui(engine):
     st.subheader("➕ Ajouter un nouveau prestataire")
     
     with st.form("form_nouveau_presta"):
-        nom_presta = st.text_input("Nom du prestataire (ex: VEOLIA ILE DE FRANCE)")
+        nom_presta = st.text_input("Nom du prestataire/exutoire")
         col_h, _ = st.columns([1, 1])
         with col_h:
             header_row = st.number_input("Ligne d'en-tête (Header) de la facture (ex: 0 pour la 1ère ligne)", min_value=0, value=0)
             
-        st.markdown("#### Mapping des colonnes de la Facture")
-        st.caption("Entrez le NOM EXACT de la colonne telle qu'elle apparait dans le fichier Excel du prestataire.")
-        
-        c1, c2 = st.columns(2)
-        with c1:
-            col_ticket = st.text_input("Colonne: Num Ticket Facture", placeholder="Ex: N° Ticket")
-            col_bon = st.text_input("Colonne: Num Bon", placeholder="Ex: Ref Bon")
-            col_date = st.text_input("Colonne: Date", placeholder="Ex: Date Pesée")
-            col_poids = st.text_input("Colonne: Poids", placeholder="Ex: Poids Net")
+        with st.expander("⚙️ Configuration du Mapping (Technique)", expanded=False):
+            st.caption("Entrez le NOM EXACT de la colonne telle qu'elle apparait dans le fichier Excel du prestataire.")
             
-        with c2:
-            col_client = st.text_input("Colonne: Client", placeholder="Ex: Code Client")
-            col_matiere = st.text_input("Colonne: Matière", placeholder="Ex: Produit")
-            col_immat = st.text_input("Colonne: Immatriculation", placeholder="Ex: Immat")
-            date_format = st.selectbox("Format de Date de la Facture", ["DD/MM/YYYY", "YYYY-MM-DD", "MM/DD/YYYY"])
+            c1, c2 = st.columns(2)
+            with c1:
+                col_ticket = st.text_input("Colonne: Num Ticket Facture", placeholder="Ex: N° Ticket")
+                col_bon = st.text_input("Colonne: Num Bon", placeholder="Ex: Ref Bon")
+                col_date = st.text_input("Colonne: Date", placeholder="Ex: Date Pesée")
+                col_poids = st.text_input("Colonne: Poids", placeholder="Ex: Poids Net")
+                
+            with c2:
+                col_client = st.text_input("Colonne: Client", placeholder="Ex: Code Client")
+                col_matiere = st.text_input("Colonne: Matière", placeholder="Ex: Produit")
+                col_immat = st.text_input("Colonne: Immatriculation", placeholder="Ex: Immat")
+                date_format = st.selectbox("Format de Date de la Facture", ["DD/MM/YYYY", "YYYY-MM-DD", "MM/DD/YYYY"])
             
         st.markdown("#### Configuration Avancée")
         c_multi_poids = st.checkbox("Le poids facturé est exprimé en Kilos (L'application le divisera par 1000)")
