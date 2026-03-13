@@ -13,6 +13,23 @@ DICT_CORRECTION_SUEZ = {
     "DECHETTERIE MLJ CLOSEAUX 2": "DECHETERIE DES CLOSEAUX MANTES LA J",
     "DECHETTERIE MLV VAUCOULEURS": "DECHETTERIE DE LA VAUCOULEURS"
 }
+DICT_CORRECTION_SUEZ_EXT = {
+    "CTCAUBER001": "CTC AUBERGENVILLE",
+    "CTCBUC001": "CTC BUCHELAY",
+    "CTCCONFLANS": "CTC CONFLANS",
+    "CTCMUREAUX": "CTC LES MUREAUX",
+    "CTCPOISSY": "CTC POISSY",
+    "DECEPO001": "DECHETTERIE EPONE",
+    "DECGAR001": "DECHETTERIE GARGENVILLE",
+    "DECHACHE001" : "DECHETTERIE ACHERES",
+    "DECHAUB001" : "DECHETTERIE AUBERGENVILLE",
+    "DECHCONFL001" : "DECHETTERIE CONFLANS",
+    "DECHLIM001" : "DECHETTERIE LIMAY",
+    "DECHMAN001" : "DECHETTERIE MLV VAUCOULEURS",
+    "DECHMUR001" : "DECHETTERIE LES MUREAUX",
+    "DECHORGE001" : "DECHETTERIE ORGEVAL",
+    "DECMAJ001" : "DECHETTERIE MLJ CLOSEAUX 1"
+}
 
 def convertir_date_suez(val):
     if pd.isna(val) or val == "": return pd.NaT
@@ -28,16 +45,23 @@ def convertir_date_suez(val):
     except:
         pass
 
-    # 2. FORMATS FRANÇAIS STRICTS
+    # 2. FORMATS AMÉRICAINS D'ABORD (MM/DD/YYYY)
+    for fmt in ["%m/%d/%Y", "%m/%d/%y", "%m-%d-%Y"]:
+        try:
+            return datetime.strptime(v_str, fmt).date()
+        except:
+            continue
+            
+    # 3. FORMATS FRANÇAIS (DD/MM/YYYY)
     for fmt in ["%d/%m/%Y", "%d/%m/%y", "%d-%m-%Y"]:
         try:
             return datetime.strptime(v_str, fmt).date()
         except:
             continue
             
-    # 3. Fallback Pandas avec dayfirst=True
+    # 4. Fallback Pandas avec dayfirst=False
     try:
-        dt = pd.to_datetime(v_str, dayfirst=True, errors='coerce')
+        dt = pd.to_datetime(v_str, dayfirst=False, errors='coerce')
         if pd.notna(dt): return dt.date()
     except:
         pass
@@ -100,7 +124,7 @@ def charger_suez_terrain(f, type_fichier):
             if "poids" in cl and not "delta" in cl: cols_map[c] = "Poids_Terrain"
             if "immat" in cl or "camion" in cl: cols_map[c] = "Immatriculation"
             if "chauffeur" in cl: cols_map[c] = "Chauffeur"
-            if "client" in cl or "provenance" in cl or "nchantier" in cl: cols_map[c] = "Client"
+            if "nchantier" in cl: cols_map[c] = "Client"
             if "matière" in cl or "libellé " in cl or "nature" in cl or "description" in cl: cols_map[c] = "Matiere_T"
 
         df = df.rename(columns=cols_map)
@@ -144,8 +168,8 @@ def process_suez(f_ctc, f_dech, f_fac):
     col_transp = None
     for c in df_ref.columns:
         cl = str(c).lower().strip()
-        if "nom recherche client" in cl: col_target = c
-        if "nom du transporteur" in cl: col_transp = c
+        if "nom recherche producteur" in cl or "nom recherche client" in cl: col_target = c
+        if "nom recherche transporteur" in cl or "nom du transporteur" in cl: col_transp = c
         
     if col_target:
         df_ref = df_ref[df_ref[col_target].astype(str).str.upper().str.strip() == 'GPSEOAUB']
@@ -154,8 +178,36 @@ def process_suez(f_ctc, f_dech, f_fac):
         val_transp = df_ref[col_transp].astype(str).str.upper().str.strip()
         df_ref = df_ref[val_transp.str.contains('SOTREMA', na=False) | (val_transp == 'K0ESOTRE')]
     
+    # Choisir une seule colonne pour EXT Client (priorité à N° adresse de service)
+    col_ext_client = None
+    for c in df_ref.columns:
+        cl = str(c).lower().strip()
+        if "n° adresse de service" in cl:
+            col_ext_client = c
+            break
+
+    if col_ext_client is None:
+        for c in df_ref.columns:
+            cl = str(c).lower().strip()
+            if ("chantier" in cl or "producteur" in cl) and "nom" in cl:
+                col_ext_client = c
+                break
+
+    if col_ext_client is None:
+        for c in df_ref.columns:
+            cl = str(c).lower().strip()
+            if "nom de l'adresse de service" in cl:
+                col_ext_client = c
+                break
+
+    if col_ext_client is None:
+        for c in df_ref.columns:
+            cl = str(c).lower().strip()
+            if "ville de l'adresse de service" in cl:
+                col_ext_client = c
+                break
+
     cols_ref = {}
-    col_ext_client_found = False
 
     for c in df_ref.columns:
         cl = str(c).lower().strip()
@@ -165,31 +217,19 @@ def process_suez(f_ctc, f_dech, f_fac):
         if cl in ["date du bon", "date", "le", "journee", "journée"]: cols_ref[c] = "Date_Ref"
         elif "date" in cl: cols_ref[c] = "Date_Ref"
         if "nom recherche client" in cl: cols_ref[c] = "Billing_Client"
-        
-        if "nom de l'adresse de service" in cl:
-             cols_ref[c] = "EXT Client"
-             col_ext_client_found = True
-             
-        elif "ville de l'adresse de service" in cl:
-             if not col_ext_client_found:
-                 cols_ref[c] = "EXT Client"
-                 col_ext_client_found = True
-             
-        elif ("chantier" in cl or "producteur" in cl ) and "nom" in cl:
-             if not col_ext_client_found:
-                 cols_ref[c] = "EXT Client"
-                 col_ext_client_found = True
-        
+        if c == col_ext_client:
+            cols_ref[c] = "EXT Client"
         if "description déchet" in cl: cols_ref[c] = "EXT_Matiere"
         if "immatriculation" in cl: cols_ref[c] = "Immatriculation"
 
-    if not col_ext_client_found:
-        for c in df_ref.columns:
-            if "nom de l'adresse de service" in str(c).lower():
-                cols_ref[c] = "EXT Client"
-
     df_ref = df_ref.rename(columns=cols_ref)
     df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
+    
+    if 'EXT Client' in df_ref.columns:
+        df_ref['EXT Client'] = df_ref['EXT Client'].astype(str).str.upper().str.strip()
+        for k, v in DICT_CORRECTION_SUEZ_EXT.items():
+            df_ref['EXT Client'] = df_ref['EXT Client'].replace(k, v)
+        df_ref['EXT Client'] = df_ref['EXT Client'].astype(str).replace(['nan', 'None', '', 'NAN'], np.nan)
     
 
     

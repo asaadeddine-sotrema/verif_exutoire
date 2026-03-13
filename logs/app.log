@@ -837,3 +837,41 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-03-10 12:13:12,111 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-03-10 12:13:12 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
 2026-03-10 12:14:57 - INFO - [System] - Connexion réussie: admin
+2026-03-11 09:17:59 - INFO - [System] - Connexion réussie: admin
+2026-03-12 09:32:40 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-03-12 09:32:48 - INFO - [System] - Connexion réussie: admin
+2026-03-12 10:49:26 - INFO - [None] - Connexion réussie: test
+2026-03-12 10:49:38 - INFO - [None] - Connexion réussie: admin
+2026-03-12 10:51:22,698 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-12 10:51:22 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-12 15:45:32 - INFO - [System] - Connexion réussie: admin
+2026-03-12 16:12:49,035 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-12 16:12:49 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-12 16:13:03 - INFO - [System] - Connexion réussie: admin
+2026-03-12 16:33:04,266 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-12 16:33:04 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-12 16:43:29 - INFO - [System] - Connexion réussie: admin
+2026-03-13 09:20:13 - INFO - [System] - Connexion réussie: admin
+2026-03-13 10:12:12 - INFO - [System] - Connexion réussie: ilemaistre
+2026-03-13 10:42:12,411 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:42:12 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:42:22 - INFO - [System] - Connexion réussie: admin
+2026-03-13 10:46:55,612 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:46:55 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:47:10 - INFO - [System] - Connexion réussie: admin
+2026-03-13 10:52:46,603 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:52:46 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:53:16 - INFO - [System] - Connexion réussie: admin
+2026-03-13 10:57:47,521 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:57:47 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 10:58:15 - INFO - [System] - Connexion réussie: admin
+2026-03-13 11:08:21,454 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 11:08:21 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 11:08:39 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-03-13 11:08:43 - INFO - [System] - Connexion réussie: admin
+2026-03-13 11:10:32,487 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 11:10:32 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 11:10:40 - INFO - [System] - Connexion réussie: admin
+2026-03-13 11:13:53,246 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 11:13:53 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 11:17:10 - INFO - [System] - Connexion réussie: ilemaistre

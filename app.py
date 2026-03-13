@@ -796,7 +796,7 @@ def interface_admin():
     last_count = st.session_state.get('last_batch_count')
     
     if last_batch:
-        st.subheader("🚨 Urgence : Annuler le dernier import")
+        st.subheader("Annuler le dernier import")
         st.warning(f"Votre dernier import (**{last_count} lignes**) a reçu l'identifiant de lot : `{last_batch}`.")
         
         if st.button("⏪ Annuler cet import immédiatement", type="primary"):
@@ -1412,7 +1412,7 @@ else:
     domain = st.sidebar.radio("Domaine :", ["🚛 Flux Exutoire", "👥 Gestion d'Activité", "📖 Manuel Utilisateur"], on_change=clear_app_state)
     
     if domain == "🚛 Flux Exutoire":
-        options_exutoire = ["📊 Tableau de Bord Exutoire", "⚖️ Vérification Tonnages", "♻️ Vérification Ecorec", "⚙️ Administration"]
+        options_exutoire = ["📊 Tableau de Bord Exutoire", "⚖️ Vérification Tonnages", "⚙️ Administration"]
         categorie = st.sidebar.radio("Menu :", options_exutoire, on_change=clear_app_state)
         
     elif domain == "👥 Gestion d'Activité": # Heures
