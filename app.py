@@ -18,6 +18,10 @@ import numpy as np
 import unicodedata
 import datetime
 import bcrypt
+from PIL import Image
+# Désactiver la limite PIL pour les images volumineuses
+Image.MAX_IMAGE_PIXELS = None
+
 from sqlalchemy import create_engine, text, MetaData, Table
 from sqlalchemy.dialects.postgresql import insert
 import json
@@ -165,7 +169,7 @@ def login_screen():
     st.markdown("""<style>.login-box { padding: 2rem; border-radius: 10px; border: 1px solid #ddd; }</style>""", unsafe_allow_html=True)
     
     with st.container():
-        st.title("🔐 Connexion")
+        st.title("Connexion")
         user = st.text_input("Identifiant")
         password = st.text_input("Mot de passe", type="password")
         
@@ -1530,18 +1534,16 @@ else:
                 **Chemin ECOREC :**  
                 `(CONTROLE & POINTAGE TONNAGES / Contrôle Mensuel / Rapports Outil Exutoire / VALENE)`
                 
-                **Fichiers à charger (3) :**
-                1.  **PAP** : Extraction Ecorec PAP.
-                2.  **PAV** : Extraction Ecorec PAV.
+                **Fichier à charger :**
                 3.  **SOTREMA2** : Extraction Ecorec Sotrema2.
                 """)
-            c1, c2, c3 = st.columns(3)
-            f_pap = c1.file_uploader("Fichier ECOREC (PAP)", type=['xlsx', 'xls', 'xlsm'])
-            f_pav = c2.file_uploader("Fichier ECOREC (PAV)", type=['xlsx', 'xls', 'xlsm'])
-            f_sot = c3.file_uploader("Fichier ECOREC (SOTREMA2)", type=['xlsx', 'xls', 'xlsm'])
+            # c1, c2, c3 = st.columns(3)
+            # f_pap = c1.file_uploader("Fichier ECOREC (PAP)", type=['xlsx', 'xls', 'xlsm'])
+            # f_pav = c2.file_uploader("Fichier ECOREC (PAV)", type=['xlsx', 'xls', 'xlsm'])
+            f_sot = st.file_uploader("Fichier ECOREC (SOTREMA2)", type=['xlsx', 'xls', 'xlsm'])
             f_exp = st.file_uploader("Export Facture", type=['xlsx', 'xls', 'xlsm'])
             if st.button("Lancer") and f_exp:
-                st.session_state['df_valene'] = process_valene(f_pap, f_pav, f_sot, f_exp)
+                st.session_state['df_valene'] = process_valene(f_sot, f_exp)
 
             if 'df_valene' in st.session_state:
                 df = st.session_state['df_valene']

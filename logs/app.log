@@ -915,3 +915,38 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-06-15 15:24:16 - WARNING - [System] - Echec connexion pour utilisateur: admin
 2026-06-15 15:24:20 - INFO - [System] - Connexion réussie: admin
 2026-06-16 09:17:39 - INFO - [System] - Connexion réussie: admin
+2026-06-16 09:58:53,929 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 09:58:54 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 09:59:09 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:07:07,602 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:07:07 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:07:59 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:10:20,165 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:10:20 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:10:27 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:14:02,957 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:14:03 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:14:21 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:16:56,185 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:16:56 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:17:02 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:20:12,422 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:20:12 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:20:23 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:24:36,705 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:24:36 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:24:48 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:43:23,627 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:43:23 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:45:18 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:47:30,682 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:47:30 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:49:20 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:54:17,718 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:54:17 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:57:03 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:57:19 - INFO - [System] - Connexion réussie: admin
+2026-06-16 10:58:34,638 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 10:58:34 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-16 11:05:48,589 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-16 11:05:48 - INFO - [System] - Logging initialisé. Fichier: logs/app.log

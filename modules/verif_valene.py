@@ -160,11 +160,11 @@ def charger_valene(f, source):
         return df
     except: return pd.DataFrame()
 
-def process_valene(f_pap, f_pav, f_sot, f_exp):
+def process_valene(f_sot, f_exp):
     logger.info("Début traitement VALENE")
     dfs = []
-    if f_pap: dfs.append(charger_valene(f_pap, "PAP"))
-    if f_pav: dfs.append(charger_valene(f_pav, "PAV"))
+    # if f_pap: dfs.append(charger_valene(f_pap, "PAP"))
+    # if f_pav: dfs.append(charger_valene(f_pav, "PAV"))
     if f_sot: dfs.append(charger_valene(f_sot, "SOTREMA2"))
     if not dfs: return pd.DataFrame()
     df_ter = pd.concat(dfs, ignore_index=True)
@@ -191,6 +191,14 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
     df_ref = df_ref.rename(columns=cols_ref); df_ref = df_ref.loc[:, ~df_ref.columns.duplicated()]
     if 'Date_Ref' in df_ref.columns:
         df_ref['Date_Ref'] = df_ref['Date_Ref'].apply(convertir_date_robuste)
+
+    # Filtre les lignes de la facture pour ne conserver que celles dont le client contient SOTREMA
+    client_cols = [c for c in df_ref.columns if 'client' in str(c).lower()]
+    if client_cols:
+        mask_sot = pd.Series(False, index=df_ref.index)
+        for c in client_cols:
+            mask_sot |= df_ref[c].astype(str).str.contains('SOTREMA', case=False, na=False)
+        df_ref = df_ref[mask_sot].copy()
     
     # Nettoyage des lignes completement vides
     df_ter = df_ter.dropna(how='all', subset=[c for c in df_ter.columns if c not in ['Activité', 'Client']])
@@ -390,6 +398,7 @@ def process_valene(f_pap, f_pav, f_sot, f_exp):
     c_im_f = merged.get('Immatriculation_F', pd.Series([np.nan]*len(merged)))
     merged['Immatriculation'] = resolve_col(merged, 'Immatriculation').fillna(c_im_t).fillna(c_im_f)
     
+    merged['Num Bon'] = resolve_col(merged, 'Num Bon').fillna('').astype(str).replace(['nan', 'NAN', 'None'], '')
     merged['Exutoire'] = "VALENE"
     
     # Resolution of Weights
