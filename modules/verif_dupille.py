@@ -95,16 +95,16 @@ def resolve_multi(df, candidates):
 def normaliser_matiere_dupille(val):
     if pd.isna(val): return ""
     v = str(val).upper().strip()
+    v_normalized = unicodedata.normalize('NFKD', v).encode('ascii', 'ignore').decode('ascii')
     # Simplified normalization for matching
-    if "BOIS" in v: return "BOIS"
-    if "GRAVAT" in v: return "GRAVATS"
-    if "DIB" in v or "MELANGE" in v: return "DIB"
-    if "CARTON" in v: return "CARTONS"
-    if "PLASTIQUE" in v: return "PLASTIQUES"
-    if "VÉGÉTAUX" in v or "VEGETAUX" in v: return "DECHETS VERTS"
-    if "DÉCHETS VÉGÉTAUX" in v or "DECHETS VEGETAUX" in v: return "DECHETS VERTS"
-    if "DECHETS VERTS" in v or "DÉCHETS VERTS" in v: return "DECHETS VERTS"
-    return v
+    if "BOIS" in v_normalized: return "BOIS"
+    if "GRAVAT" in v_normalized: return "GRAVATS"
+    if "DIB" in v_normalized or "MELANGE" in v_normalized: return "DIB"
+    if "CARTON" in v_normalized: return "CARTONS"
+    if "PLASTIQUE" in v_normalized: return "PLASTIQUES"
+    if "DECHETS VEGETAUX" in v_normalized or "VEGETAUX" in v_normalized: return "DECHETS VERTS"
+    if "DECHETS VERTS" in v_normalized: return "DECHETS VERTS"
+    return v_normalized
 
 def normaliser_client_dupille(val):
     if pd.isna(val): return ""

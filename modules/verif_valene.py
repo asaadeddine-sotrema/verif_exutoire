@@ -192,15 +192,10 @@ def process_valene(f_sot, f_exp):
     if 'Date_Ref' in df_ref.columns:
         df_ref['Date_Ref'] = df_ref['Date_Ref'].apply(convertir_date_robuste)
 
-    # Filtre les lignes de la facture pour ne conserver que celles dont le client contient SOTREMA
-    client_cols = [c for c in df_ref.columns if 'client' in str(c).lower()]
-    if client_cols:
-        mask_sot = pd.Series(False, index=df_ref.index)
-        for c in client_cols:
-            mask_sot |= df_ref[c].astype(str).str.contains('SOTREMA', case=False, na=False)
-        df_ref = df_ref[mask_sot].copy()
-    
-    # Nettoyage des lignes completement vides
+    # Ne pas filtrer exclusivement sur le client SOTREMA dans la facture Valene.
+    # Certaines prestations peuvent être enregistrées chez SOTREMA2 à l'interne
+    # mais facturées sous un autre client par l'exutoire.
+    # Le rapprochement se fera plutôt par ticket, date et poids.
     df_ter = df_ter.dropna(how='all', subset=[c for c in df_ter.columns if c not in ['Activité', 'Client']])
     df_ref = df_ref.dropna(how='all')
     
@@ -235,14 +230,27 @@ def process_valene(f_sot, f_exp):
     l_ter = df_ter[~df_ter['K'].isin(matched_ids_t)].copy()
     l_ref = df_ref[~df_ref['K'].isin(matched_ids_f)].copy()
 
+    # Pour les tickets non rapprochés par ticket exact,
+    # on conserve uniquement les factures SOTREMA pour le matching intelligent.
+    client_cols = [c for c in l_ref.columns if 'client' in str(c).lower()]
+    if client_cols:
+        mask_sot_remaining = pd.Series(False, index=l_ref.index)
+        for c in client_cols:
+            mask_sot_remaining |= l_ref[c].astype(str).str.contains('SOTREMA', case=False, na=False)
+        l_ref_sot = l_ref[mask_sot_remaining].copy()
+    else:
+        # S'il n'y a pas de colonne client, on ne peut pas identifier de factures SOTREMA.
+        l_ref_sot = l_ref.iloc[0:0].copy()
+
     # 2. Match Intelligent sur Date et Poids (pour la facturation sans ticket ou erreur)
     match2 = pd.DataFrame()
-    if not l_ter.empty and not l_ref.empty:
+    final_f_sot = l_ref_sot.copy()
+    if not l_ter.empty and not l_ref_sot.empty:
         l_ter['Key_Date'] = l_ter['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN") if 'Date_Ref' in l_ter.columns else "NAN"
-        l_ref['Key_Date'] = l_ref['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN") if 'Date_Ref' in l_ref.columns else "NAN"
+        l_ref_sot['Key_Date'] = l_ref_sot['Date_Ref'].apply(lambda x: convertir_date_robuste(x).strftime('%Y-%m-%d') if pd.notna(convertir_date_robuste(x)) else "NAN") if 'Date_Ref' in l_ref_sot.columns else "NAN"
         
         l_ter_valid = l_ter[l_ter['Key_Date'] != "NAN"].copy()
-        l_ref_valid = l_ref[l_ref['Key_Date'] != "NAN"].copy()
+        l_ref_valid = l_ref_sot[l_ref_sot['Key_Date'] != "NAN"].copy()
 
         # PRE-AGREGATION des tickets Terrain sur le Num Bon
         # Parfois, il y a 2 tickets pour 1 seul bon, et Valene ne fournit pas Num Bon dans sa facture
@@ -285,23 +293,27 @@ def process_valene(f_sot, f_exp):
                     
                     if 'Num Ticket_F' in match2.columns:
                         matched_tickets = match2['Num Ticket_F'].tolist()
-                        final_f = l_ref[~l_ref['Num Ticket'].isin(matched_tickets)]
-                    else: 
-                        final_f = l_ref
-                else: 
-                    final_t, final_f = l_ter, l_ref
-            else: 
-                final_t, final_f = l_ter, l_ref
-        else: 
-            final_t, final_f = l_ter, l_ref
-    else: 
-        final_t, final_f = l_ter, l_ref
+                        final_f_sot = l_ref_sot[~l_ref_sot['Num Ticket'].isin(matched_tickets)].copy()
+                    else:
+                        final_f_sot = l_ref_sot.copy()
+                else:
+                    final_t = l_ter
+                    final_f_sot = l_ref_sot.copy()
+            else:
+                final_t = l_ter
+                final_f_sot = l_ref_sot.copy()
+        else:
+            final_t = l_ter
+            final_f_sot = l_ref_sot.copy()
+    else:
+        final_t = l_ter
+        final_f_sot = l_ref_sot.copy()
 
     # 3. Match 3 : Agrégation Journalière Combinatoire (Sans Plaque d'Immat)
     match3 = pd.DataFrame()
-    if not final_t.empty and not final_f.empty:
+    if not final_t.empty and not final_f_sot.empty:
         valid_t = final_t[final_t['Key_Date'] != "NAN"].copy()
-        valid_f = final_f[final_f['Key_Date'] != "NAN"].copy()
+        valid_f = final_f_sot[final_f_sot['Key_Date'] != "NAN"].copy()
 
         if not valid_t.empty and not valid_f.empty:
             valid_t['Poids_Terrain'] = pd.to_numeric(valid_t['Poids_Terrain'], errors='coerce').fillna(0)
@@ -337,9 +349,11 @@ def process_valene(f_sot, f_exp):
                     # Retirer les lignes utilisées
                     used_keys = match3['Key_Date'].tolist()
                     final_t = final_t[~final_t['Key_Date'].isin(used_keys)]
-                    final_f = final_f[~final_f['Key_Date'].isin(used_keys)]
+                    final_f_sot = final_f_sot[~final_f_sot['Key_Date'].isin(used_keys)]
                     
                     match3 = match3.drop(columns=['Delta_Poids'])
+
+    final_f = final_f_sot.copy()
 
     # Orphelins
     cols_ter_orig = df_ter.columns
