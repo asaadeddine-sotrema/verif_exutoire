@@ -875,3 +875,43 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-03-13 11:13:53,246 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-03-13 11:13:53 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
 2026-03-13 11:17:10 - INFO - [System] - Connexion réussie: ilemaistre
+2026-03-13 12:09:52,683 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 12:09:52 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 12:12:38,213 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 12:12:38 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 12:14:15,646 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 12:14:15 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 14:35:54 - INFO - [System] - Connexion réussie: tcartalier
+2026-03-13 14:46:05,877 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 14:46:06 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 14:46:14 - INFO - [System] - Connexion réussie: admin
+2026-03-13 14:48:27,429 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 14:48:27 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 15:00:02,656 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 15:00:02 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-13 15:01:58 - WARNING - [System] - Echec connexion pour utilisateur: tcartalier
+2026-03-13 15:02:06 - WARNING - [System] - Echec connexion pour utilisateur: tcartalier
+2026-03-13 15:02:12 - INFO - [System] - Connexion réussie: tcartalier
+2026-03-13 15:08:12 - INFO - [System] - Connexion réussie: tcartalier
+2026-03-13 16:05:39,867 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-03-13 16:05:40 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-03-16 11:59:45 - INFO - [System] - Connexion réussie: admin
+2026-03-16 14:58:29 - INFO - [System] - Connexion réussie: admin
+2026-03-17 11:55:25 - INFO - [System] - Connexion réussie: tcartalier
+2026-03-17 11:56:21 - INFO - [System] - Connexion réussie: tcartalier
+2026-03-25 11:28:30 - INFO - [System] - Connexion réussie: tcartalier
+2026-04-07 08:53:26 - INFO - [System] - Connexion réussie: tcartalier
+2026-04-08 15:55:22 - INFO - [System] - Connexion réussie: tcartalier
+2026-04-16 17:29:33 - INFO - [System] - Connexion réussie: tcartalier
+2026-04-24 12:16:49 - WARNING - [System] - Echec connexion pour utilisateur: ilemaistre
+2026-04-24 12:17:09 - INFO - [System] - Connexion réussie: ilemaistre
+2026-06-15 09:34:23 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-06-15 09:35:18 - WARNING - [System] - Echec connexion pour utilisateur: amine
+2026-06-15 09:35:22 - WARNING - [System] - Echec connexion pour utilisateur: amine
+2026-06-15 09:37:17 - WARNING - [System] - Echec connexion pour utilisateur: amine
+2026-06-15 09:42:30,384 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-15 09:42:30 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-15 09:42:39 - INFO - [System] - Connexion réussie: amine
+2026-06-15 15:24:16 - WARNING - [System] - Echec connexion pour utilisateur: admin
+2026-06-15 15:24:20 - INFO - [System] - Connexion réussie: admin
+2026-06-16 09:17:39 - INFO - [System] - Connexion réussie: admin

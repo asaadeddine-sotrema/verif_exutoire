@@ -202,6 +202,18 @@ def logout():
     cookie_manager.delete("auth_user")
     st.rerun()
 
+def is_admin_user(username):
+    """
+    Vérifie si l'utilisateur a les droits administrateur.
+    """
+    env_admins_json = os.getenv("APP_ADMINS", "[]")
+    try:
+        admin_users = json.loads(env_admins_json)
+        return username in admin_users
+    except json.JSONDecodeError:
+        # Par défaut, seul 'admin' est admin si la config est invalide
+        return username == "admin"
+
 
 
 
@@ -821,7 +833,7 @@ def interface_admin():
         st.divider()
 
 
-    if st.session_state.get("username") == "admin":
+    if is_admin_user(st.session_state.get("username")):
         st.divider()
         st.subheader("👤 Création d'un Nouvel Utilisateur")
         with st.form("form_new_user"):
@@ -1409,13 +1421,13 @@ else:
 
     st.sidebar.title("Navigation")
     
-    domain = st.sidebar.radio("Domaine :", ["🚛 Flux Exutoire", "👥 Gestion d'Activité", "📖 Manuel Utilisateur"], on_change=clear_app_state)
+    domain = st.sidebar.radio("Domaine :", ["🚛 Flux Exutoire Tonnages", "👥 Gestion d'Activité Heures", "📖 Manuel Utilisateur"], on_change=clear_app_state)
     
-    if domain == "🚛 Flux Exutoire":
+    if domain == "🚛 Flux Exutoire Tonnages":
         options_exutoire = ["📊 Tableau de Bord Exutoire", "⚖️ Vérification Tonnages", "⚙️ Administration"]
         categorie = st.sidebar.radio("Menu :", options_exutoire, on_change=clear_app_state)
         
-    elif domain == "👥 Gestion d'Activité": # Heures
+    elif domain == "👥 Gestion d'Activité Heures": # Heures
         options_heures = ["📥 Import des fichiers", "📅 Suivi de Présences", "📈 Statistiques"]
         categorie = st.sidebar.radio("Menu :", options_heures, on_change=clear_app_state)
         st.sidebar.info("Module de gestion opérationnelle.")
@@ -1437,13 +1449,21 @@ else:
         
     elif categorie == "📖 Manuel Utilisateur":
         st.title("📖 Manuel d'Utilisation")
+        
+        # Afficher la vidéo de présentation si elle existe
+        video_path = "md/presentation_outil.mp4"
+        if os.path.exists(video_path):
+            st.subheader("📹 Vidéo de Présentation")
+            st.video(video_path)
+            st.divider()
+        
         try:
             # We look for the manual in the correct location
             manual_path = "modules/MANUEL_UTILISATEUR.md" 
             if not os.path.exists(manual_path): manual_path = "MANUEL_UTILISATEUR.md"
             with open(manual_path, "r", encoding="utf-8") as f:
                 content = f.read()
-            st.markdown(content)
+            st.markdown(content, unsafe_allow_html=True)
         except Exception as e:
             st.error(f"Le manuel n'a pas pu être chargé : {e}")
             
@@ -1454,7 +1474,7 @@ else:
         # Fetch dynamic providers
         prestataires_dynamiques = get_prestataires_dynamiques(engine)
         noms_dynamiques = [p['nom'] for p in prestataires_dynamiques] if prestataires_dynamiques else []
-        tous_prestataires = sorted(["DUPILLE", "PICHETA GPSEO", "PICHETA INOE", "PICHETA SMIRTOM", "PICHETA VALOSEINE", "SUEZ", "VALENE", "AZALYS SOTREMA", "AZALYS VALOSEINE", "VERT COMPOST SMIRTOM", "SATEL SMIRTOM ENC"] + noms_dynamiques)
+        tous_prestataires = sorted(["DUPILLE", "PICHETA GPSEO", "PICHETA INOE", "PICHETA SMIRTOM", "PICHETA VALOSEINE", "SUEZ", "VALENE", "AZALYS SOTREMA", "AZALYS VALOSEINE", "VERT COMPOST SMIRTOM", "SATEL SMIRTOM ENC"])
 
         provider = st.sidebar.radio("Choisir le prestataire", tous_prestataires, on_change=clear_app_state)
         st.divider()
@@ -1756,8 +1776,4 @@ else:
         show_verif_heures_ui(engine, mode=categorie)
 
     elif categorie == "⚙️ Administration":
-        tab_admin, tab_presta = st.tabs(["🔒 Utilisateurs", "⚙️ Modèles Prestataires"])
-        with tab_admin:
-            interface_admin()
-        with tab_presta:
-            show_admin_prestataires_ui(engine)
+        interface_admin()
