@@ -965,3 +965,14 @@ AttributeError: 'str' object has no attribute 'seek'
 2026-06-16 15:06:56,387 - root - INFO - Logging initialisé. Fichier: logs/app.log
 2026-06-16 15:06:56 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
 2026-06-16 15:07:03 - INFO - [System] - Connexion réussie: admin
+2026-06-17 08:55:04 - INFO - [System] - Connexion réussie: admin
+2026-06-17 09:21:58,551 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-17 09:21:58 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-17 09:24:35 - INFO - [System] - Connexion réussie: admin
+2026-06-17 09:32:27,907 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-17 09:32:28 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-17 09:32:34 - INFO - [System] - Connexion réussie: admin
+2026-06-17 10:25:02,236 - root - INFO - Logging initialisé. Fichier: logs/app.log
+2026-06-17 10:25:02 - INFO - [System] - Logging initialisé. Fichier: logs/app.log
+2026-06-17 10:25:08 - INFO - [System] - Connexion réussie: admin
+2026-06-17 15:00:55 - INFO - [System] - Connexion réussie: admin

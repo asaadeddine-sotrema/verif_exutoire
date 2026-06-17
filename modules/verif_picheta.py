@@ -86,6 +86,14 @@ def standardize_picheta_matiere(val):
     return str(val)
 
 
+def extract_rupture(row):
+    for v in row:
+        s = str(v).strip()
+        if s.lower().startswith("code adresse:"):
+            return s.split(":", 1)[1].strip()
+    return np.nan
+
+
 def charger_picheta(f, source):
     temp = pd.read_excel(f, header=None, nrows=20)
     best_idx = 0
@@ -488,8 +496,10 @@ def process_picheta_smirtom(f_ter, f_fac):
     c_ext_f = final.get('EXT Client_F', pd.Series([np.nan]*len(final)))
     final['EXT Client'] = c_ext_f.combine_first(final.get('EXT Client', pd.Series([np.nan]*len(final)))).fillna("DECHETERIE PICHETA SMIRTOM").astype(str).replace('', 'DECHETERIE PICHETA SMIRTOM')
     
-    mat_t = final.get('Matiere_T', final.get('Matiere_T_T', pd.Series([np.nan]*len(final))))
-    mat_f = final.get('EXT_Matiere', final.get('EXT_Matiere_F', pd.Series([np.nan]*len(final))))
+    mat_t = final.get('Matiere_T', pd.Series([np.nan]*len(final))).replace(['', 'nan', 'NAN', 'None'], np.nan)
+    mat_t = mat_t.combine_first(final.get('Matiere_T_T', pd.Series([np.nan]*len(final))))
+    mat_f = final.get('EXT_Matiere', pd.Series([np.nan]*len(final))).replace(['', 'nan', 'NAN', 'None'], np.nan)
+    mat_f = mat_f.combine_first(final.get('EXT_Matiere_F', pd.Series([np.nan]*len(final))))
     final['Matiere_T'] = mat_t.fillna('').apply(standardize_picheta_matiere)
     final['EXT_Matiere'] = mat_f.fillna('').apply(standardize_picheta_matiere)
     
@@ -648,8 +658,10 @@ def process_picheta_inoe(f_ctc, f_dech, f_inv):
     c_ext_f = final.get('EXT Client_F', pd.Series([np.nan]*len(final)))
     final['EXT Client'] = c_ext_f.combine_first(final.get('EXT Client', pd.Series([np.nan]*len(final)))).fillna("DECHETERIE PICHETA INOE").astype(str).replace('', 'DECHETERIE PICHETA INOE')
     
-    mat_t = final.get('Matiere_T', final.get('Matiere_T_T', pd.Series([np.nan]*len(final))))
-    mat_f = final.get('EXT_Matiere', final.get('EXT_Matiere_F', pd.Series([np.nan]*len(final))))
+    mat_t = final.get('Matiere_T', pd.Series([np.nan]*len(final))).replace(['', 'nan', 'NAN', 'None'], np.nan)
+    mat_t = mat_t.combine_first(final.get('Matiere_T_T', pd.Series([np.nan]*len(final))))
+    mat_f = final.get('EXT_Matiere', pd.Series([np.nan]*len(final))).replace(['', 'nan', 'NAN', 'None'], np.nan)
+    mat_f = mat_f.combine_first(final.get('EXT_Matiere_F', pd.Series([np.nan]*len(final))))
     final['Matiere_T'] = mat_t.fillna('').apply(standardize_picheta_matiere)
     final['EXT_Matiere'] = mat_f.fillna('').apply(standardize_picheta_matiere)
     

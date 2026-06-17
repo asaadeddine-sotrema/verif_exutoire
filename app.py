@@ -1537,13 +1537,13 @@ else:
                 **Fichier à charger :**
                 3.  **SOTREMA2** : Extraction Ecorec Sotrema2.
                 """)
-            # c1, c2, c3 = st.columns(3)
-            # f_pap = c1.file_uploader("Fichier ECOREC (PAP)", type=['xlsx', 'xls', 'xlsm'])
-            # f_pav = c2.file_uploader("Fichier ECOREC (PAV)", type=['xlsx', 'xls', 'xlsm'])
-            f_sot = st.file_uploader("Fichier ECOREC (SOTREMA2)", type=['xlsx', 'xls', 'xlsm'])
+            c1, c2, c3 = st.columns(3)
+            f_pap = c1.file_uploader("Fichier ECOREC (PAP)", type=['xlsx', 'xls', 'xlsm'])
+            f_pav = c2.file_uploader("Fichier ECOREC (PAV)", type=['xlsx', 'xls', 'xlsm'])
+            f_sot = c3.file_uploader("Fichier ECOREC (SOTREMA2)", type=['xlsx', 'xls', 'xlsm'])
             f_exp = st.file_uploader("Export Facture", type=['xlsx', 'xls', 'xlsm'])
             if st.button("Lancer") and f_exp:
-                st.session_state['df_valene'] = process_valene(f_sot, f_exp)
+                st.session_state['df_valene'] = process_valene(f_sot, f_exp, f_pav)
 
             if 'df_valene' in st.session_state:
                 df = st.session_state['df_valene']

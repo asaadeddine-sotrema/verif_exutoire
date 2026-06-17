@@ -160,11 +160,12 @@ def charger_valene(f, source):
         return df
     except: return pd.DataFrame()
 
-def process_valene(f_sot, f_exp):
+def process_valene(f_sot, f_exp, f_pav=None):
     logger.info("Début traitement VALENE")
     dfs = []
+    # Support terrain files from PAP/PAV if provided
     # if f_pap: dfs.append(charger_valene(f_pap, "PAP"))
-    # if f_pav: dfs.append(charger_valene(f_pav, "PAV"))
+    if f_pav: dfs.append(charger_valene(f_pav, "PAV"))
     if f_sot: dfs.append(charger_valene(f_sot, "SOTREMA2"))
     if not dfs: return pd.DataFrame()
     df_ter = pd.concat(dfs, ignore_index=True)
